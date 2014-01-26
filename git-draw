@@ -43,12 +43,13 @@
 # TODO
 #   -  Layout graph so commit DAG is top-down and on the left, probably using
 #      graphviz's ranks.
-#   -  Include reflog.
 #   -  Auto-number output files so user can see / compare the different states
 #      of the repository was in.
 #   -  Optionally use temporary files which the user does not directly see
 #   -  Optionally omit drawing the content of all/certain objects/refs so a bit
 #      larger than tiny repositories still draw usefully.
+#   -  tree objects / reflogs shall fan out graph edges at corresponding line in
+#      content
 
 function abbreviate-sha1 {
   # BUG: in a blob or commit-msg, would also replace what looks like a sha1
@@ -128,6 +129,30 @@ function print-dot-references {
       }'
 }
 
+function print-dot-ref-logs {
+  git show-ref --abbrev=4 | perl -pe 's@^.*?(\brefs/\S*)$@$1@' | while read refname; do
+    # 8eb068f master@{11}: commit: tempo-ext: new version
+    git reflog $refname | perl -ne '
+      BEGIN {
+        $refname = "'$refname'";
+        $dotid_reflog = "reflog_" . (($tmp = $refname) =~ s@/|\.@___@g,$tmp);
+      }
+
+      if (m/^([a-f0-9]+).*@\{\d+\}: (.*?)$/) { $id_any=$1; $msg=$2; }
+      elsif (m/^([a-f0-9]+)/) { $id_any=$1; $msg="<lastentry>"; }
+      $id_short = substr(`git rev-parse --short=4 $id_any`,0,-1);
+      print "  $dotid_reflog -> _$id_short [color=gray90]\n";
+
+      s/^[a-f0-9]+//;         # strip sha1; $id_short will be used instead
+      s/([<> "{}|\\])/\\$1/g; # quote for dot
+      s/\n/\\l/;              # \l instead newline
+      $content = $content . $id_short . $_;
+
+      END { print "  $dotid_reflog [color=gray90, fontcolor=gray, label=\"{{reflog|$refname}|$content}\"]\n"; }' 
+  done
+  # perl -pe '; s/\n/\\l/'
+}
+
 function print-dot-index {
   echo "  index [shape=component, style=filled, fillcolor=gray]"
   git ls-files --stage --abbrev=4 |
@@ -139,6 +164,7 @@ function print-dot {
   echo "  node [shape=record,fontsize=11];"
   print-dot-objects
   print-dot-references
+  print-dot-ref-logs
   print-dot-index
   echo "}"
 }
