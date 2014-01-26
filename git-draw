@@ -1,0 +1,163 @@
+#!/bin/bash
+# 
+# NAME
+#   git-draw - draws the content of a git repository
+# 
+# SYNOPSIS
+#   git-draw
+#
+# PREREQUISITES
+#   - graphviz (http://www.graphviz.org/)
+#   - imagemagick (http://www.imagemagick.org). This dependency could quite
+#     easily be dropped if git-draw would be slightly smarter and letting choose
+#     whether or not and how the image should be displayed.
+#
+#   If you have apt: sudo apt-get install graphviz imagemagick
+#
+# DESCRIPTION
+#   The intention is to help learning Git's basic concepts (references, Git
+#   objects, SHA-1 checksum over content as id). Virtually all information
+#   concerning Git's basic concepts is contained in the drawing. Thus git-draw
+#   is aimed at tiny toy Git repositories and at users with an engineer
+#   background, i.e. users which are not scared off by terms like checksum,
+#   references aka pointers and graphs.
+#
+#   The current working directory is expected to be the root directory of the
+#   project under git version control, i.e. the directory containing the .git
+#   directory.
+#
+# AUTHOR
+#   Written by Florian Kaufmann <sensorflo@gmail.com>
+#
+# COPYRIGHT
+#   Florian Kaufmann 2014. License GPLv3+: GNU GPL version 3 or later
+#   <http://gnu.org/licenses/gpl.html>. This is free software: you are free to
+#   change and redistribute it. There is NO WARRANTY, to the extent permitted by
+#   law.
+# 
+# SEE ALSO
+#   git(1)
+
+
+
+# TODO
+#   -  Layout graph so commit DAG is top-down and on the left, probably using
+#      graphviz's ranks.
+#   -  Include reflog.
+#   -  Auto-number output files so user can see / compare the different states
+#      of the repository was in.
+#   -  Optionally use temporary files which the user does not directly see
+#   -  Optionally omit drawing the content of all/certain objects/refs so a bit
+#      larger than tiny repositories still draw usefully.
+
+function abbreviate-sha1 {
+  # BUG: in a blob or commit-msg, would also replace what looks like a sha1
+  perl -pe 's/([0-9a-f]{40})/substr(`git rev-parse --short=4 $1`,0,-1)/eg'
+}
+
+function ls-all-objects {
+  # unpacked objects
+  find .git/objects/ -type f |
+    perl -ne 'print "$1$2\n" if m@^.*/([a-f0-9]{2})/([a-f0-9]{38})@' 
+
+  # packed objects
+  # note that the .idx is not always present
+  find .git/objects/pack/ -iname '*.idx' | while read idxfile; do
+    cat $idxfile | git show-index |
+      perl -pe 's@^.*?([a-f0-9]{40}).*$@$1@'
+  done
+}
+
+function ls-all-refs {
+  # todo: refs like MERGE_HEAD are still not printed
+  git show-ref --abbrev=4
+  cat .git/HEAD | perl -ne 'print substr($_,5,-1) . " HEAD\n"'
+}
+
+function ls-all-objects-short {
+  ls-all-objects | while read sha1; do
+    git rev-parse --short=4 $sha1
+  done
+}
+
+function print-dot-objects {
+  ls-all-objects-short | while read id; do
+    dotid="_$id"
+    object_type=$(git cat-file -t $id)
+    objcontent=$(git cat-file -p $id | abbreviate-sha1 | perl -pe 's/([<> \\])/\\$1/g; s/\n/\\l/')
+    case $object_type in
+      commit) echo "  $dotid [fillcolor=palegreen1, style=\"rounded,filled\"]";;
+      tag)    echo "  $dotid [fillcolor=lightyellow,style=filled]";;  
+      tree)   echo "  $dotid []";;
+      blob)   echo "  $dotid []";;  
+    esac
+    echo "  $dotid [label=\"{{obj:$object_type|$id}|$objcontent}\"]"
+
+    # todo: use git's commands to extract the object references
+    # BUG: must escape stuff that .dot interprets (\n,\l,\l,|,{},...)
+    # BUG(obsolete when using git's cmds): cannot deal with multiple sha1 on one line
+    # BUG(obsolete when using git's cmds): in a blob or commit-msg, would also replace what looks like a sha1
+    git cat-file -p $id |
+      perl -ne 'print "  '$dotid' -> _" . `git rev-parse --short=4 $1` if /([a-f0-9]{40})/'
+  done
+
+  git fsck --cache --unreachable --dangling 2>/dev/null |
+   perl -ne 'print "  _" . substr(`git rev-parse --short=4 $1`,0,-1) . " [style=dotted]\n" if /^(?:dangling|unreachable)\b.*?([a-f0-9]{40})/'
+}
+
+function print-dot-references {
+  ls-all-refs |
+    perl -ne '
+      if (m@(\S+)\s+(\S+?)$@) {
+        $me = $2; 
+        $other = $1; 
+        $dotid_me = "_" . (($tmp = $me) =~ s@/|\.@___@g,$tmp);
+        $dotid_other = "_" . (($tmp = $other) =~ s@/|\.@___@g,$tmp);
+        $reftype = "";
+        if ($me =~ m@^refs/heads/@) { $reftype = ":local branch"; }
+        elsif ($me =~ m@^refs/remotes/@) { $reftype = ":remote tracking branch"; }
+        elsif ($me =~ m@^refs/tags/@) { $reftype = ":tag"; }
+        if ( ($other !~ m/^[a-f0-9]+$/) && 0!=system("git show-ref --verify --quiet $other") ) {
+          print "  $dotid_me [style=filled, fillcolor=red, label=\"{{ref$reftype|$me|$other}|referee does not exist}\"]\n"; 
+        } else {
+          $fillfontcolor = ($me eq "HEAD") ?
+             "fillcolor=gray30, fontcolor=white" : "fillcolor=gray";
+          print "  $dotid_me [style=filled, $fillfontcolor, label=\"ref$reftype|$me|$other\"]\n"; 
+          print "  $dotid_me -> $dotid_other\n";
+        }
+      }'
+}
+
+function print-dot-index {
+  echo "  index [shape=component, style=filled, fillcolor=gray]"
+  git ls-files --stage --abbrev=4 |
+    perl -ne 'print "  index -> _$1\n" if /^[0-9]+\s+([a-f0-9]+)/'
+}
+
+function print-dot { 
+  echo "digraph structs {"
+  echo "  node [shape=record,fontsize=11];"
+  print-dot-objects
+  print-dot-references
+  print-dot-index
+  echo "}"
+}
+
+if [ ! -d .git ]; then
+  echo "not a git repository" >&2
+  exit 1
+fi
+if ! type -p dot &>/dev/null; then
+  echo "dot (part of graphviz) not found" >&2
+  exit 1
+fi
+if ! type -p display &>/dev/null; then
+  echo "display (part of imagemagick) not found" >&2
+  exit 1
+fi
+
+dotfilename=git-draw.dot
+imgfilename=git-draw.png
+print-dot >"$dotfilename" &&
+  dot -Tpng "$dotfilename" > "$imgfilename" &&
+  display "$imgfilename" 
