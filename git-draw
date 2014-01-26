@@ -50,6 +50,9 @@
 #      larger than tiny repositories still draw usefully.
 #   -  tree objects / reflogs shall fan out graph edges at corresponding line in
 #      content
+#   -  add a graph title / caption which tells the git command(s) since the last
+#      version of the repository content.
+#   -  Index node shall also display index's content
 
 function abbreviate-sha1 {
   # BUG: in a blob or commit-msg, would also replace what looks like a sha1
