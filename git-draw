@@ -130,7 +130,7 @@ function print-dot-references {
         } else {
           $fillfontcolor = ($me eq "HEAD") ?
              "fillcolor=gray30, fontcolor=white" : "fillcolor=gray";
-          print "  $dotid_me [style=filled, $fillfontcolor, label=\"ref$reftype|$me|$other\"]\n"; 
+          print "  $dotid_me [style=filled, $fillfontcolor, label=\"{{ref$reftype|$me}|$other}\"]\n"; 
           print "  $dotid_me -> $dotid_other\n";
         }
       }'
