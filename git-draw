@@ -72,7 +72,11 @@ function ls-all-objects {
 function ls-all-refs {
   # todo: refs like MERGE_HEAD are still not printed
   git show-ref --abbrev=4
-  cat .git/HEAD | perl -ne 'print substr($_,5,-1) . " HEAD\n"'
+  cat .git/HEAD | perl -ne '
+    m/^(?:ref: )?(.*?)$/;
+    if ($1 =~ m/([a-f0-9]{40})/) { $idshort = substr(`git rev-parse --short=4 $1`,0,-1) }
+    else { $idshort = $1 }
+    print $idshort . " HEAD\n";'
 }
 
 function ls-all-objects-short {
