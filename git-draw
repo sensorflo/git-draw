@@ -137,7 +137,7 @@ function print-dot-references {
 }
 
 function print-dot-ref-logs {
-  git show-ref --abbrev=4 | perl -pe 's@^.*?(\brefs/\S*)$@$1@' | while read refname; do
+  git show-ref --abbrev=4 | perl -pe 's@^.*?(\brefs/\S*)$@$1@; END { print "HEAD\n";}' | while read refname; do
     # 8eb068f master@{11}: commit: tempo-ext: new version
     git reflog $refname | perl -ne '
       BEGIN {
