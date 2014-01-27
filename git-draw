@@ -175,7 +175,7 @@ function print-dot-index {
       $content = $content . $_;
     }
     END {
-      print "  index [style=filled, fillcolor=lightcyan, label=\"{{index|}|$content}\"]\n";
+      print "  index [style=filled, fillcolor=lightcyan, label=\"{{index}|$content}\"]\n";
     }'
 }
 
