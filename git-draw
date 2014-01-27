@@ -4,13 +4,13 @@
 #   git-draw - draws nearly the full content of a tiny git repository as a graph
 # 
 # SYNOPSIS
-#   git-draw
+#   git-draw [OPTION]...
 #
 # PREREQUISITES
+#   You don't need these if you use git-draw with option --print-only.
+#
 #   - graphviz (http://www.graphviz.org/)
-#   - imagemagick (http://www.imagemagick.org). This dependency could quite
-#     easily be dropped if git-draw would be slightly smarter and letting choose
-#     whether or not and how the image should be displayed.
+#   - imagemagick (http://www.imagemagick.org)
 #
 #   If you have apt: sudo apt-get install graphviz imagemagick
 #
@@ -25,6 +25,12 @@
 #   The current working directory is expected to be the root directory of the
 #   project under git version control, i.e. the directory containing the .git
 #   directory.
+#
+# OPTIONS
+#   -p, --print-only
+#     Only prints the .dot file to STDOUT. In absence of this option, a
+#     git-draw.dot is created, it is then passed to the dot tool creating an
+#     git-draw.png, which is then passed to the display tool.
 #
 # AUTHOR
 #   Written by Florian Kaufmann <sensorflo@gmail.com>
@@ -189,21 +195,34 @@ function print-dot {
   echo "}"
 }
 
+if [[ $# = 0 ]]; then
+  :
+elif [[ ( $# = 1 ) && ( "$1" = "-p" || "$1" = "--print-only" ) ]] ; then
+  print_only=1
+else
+  echo "Invalid options" >&2
+  exit 1
+fi
+
 if [ ! -d .git ]; then
   echo "not a git repository" >&2
   exit 1
 fi
-if ! type -p dot &>/dev/null; then
-  echo "dot (part of graphviz) not found" >&2
-  exit 1
-fi
-if ! type -p display &>/dev/null; then
-  echo "display (part of imagemagick) not found" >&2
-  exit 1
-fi
 
-dotfilename=git-draw.dot
-imgfilename=git-draw.png
-print-dot >"$dotfilename" &&
-  dot -Tpng "$dotfilename" > "$imgfilename" &&
-  display "$imgfilename" 
+if [[ $print_only = 1 ]] ; then
+  print-dot
+else
+  if ! type -p dot &>/dev/null; then
+    echo "dot (part of graphviz) not found" >&2
+    exit 1
+  fi
+  if ! type -p display &>/dev/null; then
+    echo "display (part of imagemagick) not found" >&2
+    exit 1
+  fi
+  dotfilename=git-draw.dot
+  imgfilename=git-draw.png
+  print-dot >"$dotfilename" &&
+    dot -Tpng "$dotfilename" > "$imgfilename" &&
+    display "$imgfilename"
+fi
