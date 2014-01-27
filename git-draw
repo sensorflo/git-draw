@@ -161,9 +161,17 @@ function print-dot-ref-logs {
 }
 
 function print-dot-index {
-  echo "  index [shape=component, style=filled, fillcolor=gray]"
-  git ls-files --stage --abbrev=4 |
-    perl -ne 'print "  index -> _$1\n" if /^[0-9]+\s+([a-f0-9]+)/'
+  git ls-files --stage --abbrev=4 | perl -ne '
+    if (/^[0-9]+\s+([a-f0-9]+)/) {
+      print "  index -> _$1\n";
+
+      s/([<> "{}|\\])/\\$1/g; # quote for dot
+      s/\n/\\l/;              # \l instead newline
+      $content = $content . $_;
+    }
+    END {
+      print "  index [style=filled, fillcolor=lightcyan, label=\"{{index|}|$content}\"]\n";
+    }'
 }
 
 function print-dot { 
