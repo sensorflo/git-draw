@@ -66,7 +66,12 @@
 #      content
 #   -  add a graph title / caption which tells the git command(s) since the last
 #      version of the repository content.
-#   -  Index node shall also display index's content
+#   -  Provide options to choose the tool to display the image outputted by dot.
+#   -  Support for all those possible other layouts of git repositories. Bare
+#      repository, a .git file at the root pointing to the real directory,
+#      environment variables etc. Most probably by using git commands exclusive
+#      opposed to directly access files within .git, or by asking git for the
+#      path to the repository.
 
 function abbreviate-sha1 {
   # BUG: in a blob or commit-msg, would also replace what looks like a sha1
@@ -147,7 +152,7 @@ function print-dot-references {
         elsif ($me =~ m@^refs/remotes/@) { $reftype = ":remote tracking branch"; }
         elsif ($me =~ m@^refs/tags/@) { $reftype = ":tag"; $fillcolor="lightyellow"; }
         if ( ($other !~ m/^[a-f0-9]+$/) &&
-             0!=system("git show-ref --verify --quiet $other") ) {
+             0!=system("git show-ref --verify --quiet -- $other") ) {
           print "  $dotid_me [style=filled, fillcolor=red, " .
             "label=\"{{ref$reftype|$me}|$other (referee does not exist)}\"]\n"; 
         } else {
