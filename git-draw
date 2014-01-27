@@ -122,15 +122,20 @@ function print-dot-references {
         $dotid_me = "_" . (($tmp = $me) =~ s@/|\.@___@g,$tmp);
         $dotid_other = "_" . (($tmp = $other) =~ s@/|\.@___@g,$tmp);
         $reftype = "";
+        $fillcolor = "gray";
         if ($me =~ m@^refs/heads/@) { $reftype = ":local branch"; }
         elsif ($me =~ m@^refs/remotes/@) { $reftype = ":remote tracking branch"; }
-        elsif ($me =~ m@^refs/tags/@) { $reftype = ":tag"; }
+        elsif ($me =~ m@^refs/tags/@) { $reftype = ":tag"; $fillcolor="lightyellow"; }
         if ( ($other !~ m/^[a-f0-9]+$/) && 0!=system("git show-ref --verify --quiet $other") ) {
-          print "  $dotid_me [style=filled, fillcolor=red, label=\"{{ref$reftype|$me|$other}|referee does not exist}\"]\n"; 
+          print "  $dotid_me [style=filled, fillcolor=red, " .
+            "label=\"{{ref$reftype|$me}|$other (referee does not exist)}\"]\n"; 
         } else {
-          $fillfontcolor = ($me eq "HEAD") ?
-             "fillcolor=gray30, fontcolor=white" : "fillcolor=gray";
-          print "  $dotid_me [style=filled, $fillfontcolor, label=\"{{ref$reftype|$me}|$other}\"]\n"; 
+          if ($me eq "HEAD") {
+             $fillcolor="gray30";
+             $fontcolorelement = "fontcolor=white, ";
+          }
+          print "  $dotid_me [style=filled, fillcolor=$fillcolor, $fontcolorelement " .
+            "label=\"{{ref$reftype|$me}|$other}\"]\n"; 
           print "  $dotid_me -> $dotid_other\n";
         }
       }'
