@@ -54,11 +54,12 @@
 # SEE ALSO
 #   git(1)
 
+# $1 = exit code
 function print_usage_and_exit {
-  echo "Usage: git-draw [--help] [-p|--print-only] [-i|--image-only]" >&2
-  echo "  -p|--print-only  Only print .dot to stdout." >&2
-  echo "  -i|--image-only  Only create an image, and a .dot file beforehand." >&2
-  exit 1
+  echo "Usage: git-draw [--help] [-p|--print-only] [-i|--image-only]"
+  echo "  -p|--print-only  Only print .dot to stdout."
+  echo "  -i|--image-only  Only create an image, and a .dot file beforehand."
+  exit $1
 }
 
 # TODO
@@ -241,10 +242,11 @@ elif [[ ( $# = 1 ) && ( "$1" = "-p" || "$1" = "--print-only" ) ]] ; then
 elif [[ ( $# = 1 ) && ( "$1" = "-i" || "$1" = "--image-only" ) ]] ; then
   image_only=1
 elif [[ ( $# = 1 ) && ( "$1" = "--help" ) ]] ; then
-  print_usage_and_exit
+  print_usage_and_exit 0
 else
   echo "Invalid options" >&2
-  print_usage_and_exit
+  print_usage_and_exit 1 >&2
+  exit 1
 fi
 
 # check preconditions
