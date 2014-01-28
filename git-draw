@@ -269,7 +269,11 @@ print-dot >"$dotfilename" || exit 1
 
 # build and image out of the .dot file
 if ! type -p dot &>/dev/null; then
-  echo "dot (part of graphviz) not found" >&2
+  cat >&2 <<EOF
+dot (part of graphviz) not found. Either use the --print-only option, or
+install graphviz. If you have apt-get, you can do that with 'sudo apt-get
+install graphviz'.
+EOF
   exit 1
 fi
 dot -Tpng "$dotfilename" > "$imgfilename" || exit 1
@@ -279,7 +283,12 @@ if [[ $image_only = 1 ]] ; then
   exit 0
 fi
 if ! type -p display &>/dev/null; then
-  echo "display (part of imagemagick) not found" >&2
+  cat >&2 <<EOF
+display (part of imagemagick) not found. Image '$imgfilename' was generated,
+but I cannot display it. Either use the --image-only option, or install
+imagemagick. If you have apt-get, you can do that with 'sudo apt-get install
+imagemagick'.
+EOF
   exit 1
 fi
 display "$imgfilename"
