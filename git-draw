@@ -60,6 +60,9 @@ function print_usage_and_exit {
 Usage: git-draw [--help] [-p|--print-only] [-i|--image-only]"
   -p|--print-only  Only print .dot to stdout."
   -i|--image-only  Only create an image, and a .dot file beforehand."
+
+The primary documentation is at the top of the git-draw script itself, see
+$(type -p git-draw)
 EOF
   exit $1
 }
