@@ -79,6 +79,10 @@ function print_usage_and_exit {
 #      environment variables etc. Most probably by using git commands exclusive
 #      opposed to directly access files within .git, or by asking git for the
 #      path to the repository.
+#   -  Read gitrepository-layou(1) to find out more things which could be
+#      displayed
+#   -  To be on the safe side, quote _all_ non-alphanumeric characters in
+#      label strings of a dot 'program'.
 
 function abbreviate-sha1 {
   # BUG: in a blob or commit-msg, would also replace what looks like a sha1
