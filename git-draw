@@ -7,7 +7,7 @@
 #   git-draw [OPTION]...
 #
 # PREREQUISITES
-#   You don't need these if you use git-draw with option --print-only.
+#   You don't need all of these if you use git-draw with certain options.
 #
 #   - graphviz (http://www.graphviz.org/)
 #   - imagemagick (http://www.imagemagick.org)
@@ -36,9 +36,11 @@
 #
 # OPTIONS
 #   -p, --print-only
-#     Only prints the .dot file to STDOUT. In absence of this option, a
-#     git-draw.dot is created, it is then passed to the dot tool creating an
-#     git-draw.png, which is then passed to the display tool.
+#     Only prints the .dot file to STDOUT. Mutually exclusive with --image-only.
+#
+#   -i, --image-only
+#     Only generates an image of the graph, and a .dot file beforehand. Mutually
+#     exclusive with --print-only.
 #
 # AUTHOR
 #   Written by Florian Kaufmann <sensorflo@gmail.com>
@@ -53,8 +55,9 @@
 #   git(1)
 
 function print_usage_and_exit {
-  echo "Usage: git-draw [--help] [-p|--print-only]" >&2
-  echo "  -p|--print-only  Only print .dot to stdout" >&2
+  echo "Usage: git-draw [--help] [-p|--print-only] [-i|--image-only]" >&2
+  echo "  -p|--print-only  Only print .dot to stdout." >&2
+  echo "  -i|--image-only  Only create an image, and a .dot file beforehand." >&2
   exit 1
 }
 
@@ -224,10 +227,15 @@ function print-dot {
   echo "}"
 }
 
+# process options
+dotfilename=git-draw.dot
+imgfilename=git-draw.png
 if [[ $# = 0 ]]; then
   :
 elif [[ ( $# = 1 ) && ( "$1" = "-p" || "$1" = "--print-only" ) ]] ; then
   print_only=1
+elif [[ ( $# = 1 ) && ( "$1" = "-i" || "$1" = "--image-only" ) ]] ; then
+  image_only=1
 elif [[ ( $# = 1 ) && ( "$1" = "--help" ) ]] ; then
   print_usage_and_exit
 else
@@ -235,25 +243,33 @@ else
   print_usage_and_exit
 fi
 
+# check preconditions
 if [ ! -d .git ]; then
-  echo "not a git repository" >&2
+  echo "Not a git repository" >&2
   exit 1
 fi
 
+# generate .dot file
 if [[ $print_only = 1 ]] ; then
   print-dot
-else
-  if ! type -p dot &>/dev/null; then
-    echo "dot (part of graphviz) not found" >&2
-    exit 1
-  fi
-  if ! type -p display &>/dev/null; then
-    echo "display (part of imagemagick) not found" >&2
-    exit 1
-  fi
-  dotfilename=git-draw.dot
-  imgfilename=git-draw.png
-  print-dot >"$dotfilename" &&
-    dot -Tpng "$dotfilename" > "$imgfilename" &&
-    display "$imgfilename"
+  exit 0
 fi
+print-dot >"$dotfilename" || exit 1
+
+# build and image out of the .dot file
+if ! type -p dot &>/dev/null; then
+  echo "dot (part of graphviz) not found" >&2
+  exit 1
+fi
+dot -Tpng "$dotfilename" > "$imgfilename" || exit 1
+
+# display image
+if [[ $image_only = 1 ]] ; then
+  exit 0
+fi
+if ! type -p display &>/dev/null; then
+  echo "display (part of imagemagick) not found" >&2
+  exit 1
+fi
+display "$imgfilename"
+
