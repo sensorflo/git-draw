@@ -52,7 +52,11 @@
 # SEE ALSO
 #   git(1)
 
-
+function print_usage_and_exit {
+  echo "Usage: git-draw [--help] [-p|--print-only]" >&2
+  echo "  -p|--print-only  Only print .dot to stdout" >&2
+  exit 1
+}
 
 # TODO
 #   -  Layout graph so commit DAG is top-down and on the left, probably using
@@ -224,9 +228,11 @@ if [[ $# = 0 ]]; then
   :
 elif [[ ( $# = 1 ) && ( "$1" = "-p" || "$1" = "--print-only" ) ]] ; then
   print_only=1
+elif [[ ( $# = 1 ) && ( "$1" = "--help" ) ]] ; then
+  print_usage_and_exit
 else
   echo "Invalid options" >&2
-  exit 1
+  print_usage_and_exit
 fi
 
 if [ ! -d .git ]; then
