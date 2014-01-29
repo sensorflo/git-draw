@@ -212,7 +212,7 @@ function print-dot-ref-logs {
         END {
           $trailing = (substr($content,-2) eq "\\l") ? "" : "\\l"; 
           print "  $dotid_reflog [color=gray90, fontcolor=gray, " .
-            "label=\"{{reflog|$refname}|$content$trailing}\"]\n";
+            "label=\"{{reflog|logs/$refname}|$content$trailing}\"]\n";
         }' 
   done
 }
