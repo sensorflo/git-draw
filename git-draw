@@ -17,8 +17,8 @@
 #     sudo apt-get install graphviz imagemagick
 #
 # DESCRIPTION
-#   git-draw is composed of three main steps, where the 2nd and 3rd are just for
-#   convenience and are not part of git-draw's core responsibility.
+#   git-draw is composed of three main steps, where the 2nd and 3rd are just
+#   for convenience and are not part of git-draw's core responsibility.
 #
 #   1) A .dot file describing the repository's content as a graph is created.
 #   2) dot (see graphviz) is called to produce an image out of that .dot file.
@@ -36,11 +36,12 @@
 #
 # OPTIONS
 #   -p, --print-only
-#     Only prints the .dot file to STDOUT. Mutually exclusive with --image-only.
+#     Only prints the .dot file to STDOUT. Mutually exclusive with
+#     --image-only.
 #
 #   -i, --image-only
-#     Only generates an image of the graph, and a .dot file beforehand. Mutually
-#     exclusive with --print-only.
+#     Only generates an image of the graph, and a .dot file beforehand.
+#     Mutually exclusive with --print-only.
 #
 # AUTHOR
 #   Written by Florian Kaufmann <sensorflo@gmail.com>
@@ -48,8 +49,8 @@
 # COPYRIGHT
 #   Florian Kaufmann 2014. License GPLv3+: GNU GPL version 3 or later
 #   <http://gnu.org/licenses/gpl.html>. This is free software: you are free to
-#   change and redistribute it. There is NO WARRANTY, to the extent permitted by
-#   law.
+#   change and redistribute it. There is NO WARRANTY, to the extent permitted
+#   by law.
 # 
 # SEE ALSO
 #   git(1)
@@ -73,18 +74,24 @@ EOF
 #   -  Auto-number output files so user can see / compare the different states
 #      of the repository was in.
 #   -  Optionally use temporary files which the user does not directly see
-#   -  Optionally omit drawing the content of all/certain objects/refs so a bit
+#   -  Optionally omit drawing the content of all/certain objects/refs so a
+#      bit
 #      larger than tiny repositories still draw usefully.
-#   -  tree objects / reflogs shall fan out graph edges at corresponding line in
+#   -  tree objects / reflogs shall fan out graph edges at corresponding line
+#      in
 #      content
-#   -  add a graph title / caption which tells the git command(s) since the last
+#   -  Amend type cell (top left) and id cell (top right) with the prefix
+#      'type=' and 'id=' to be very clear. Optionally turn off with options.
+#   -  add a graph title / caption which tells the git command(s) since the
+#      last
 #      version of the repository content.
-#   -  Provide options to choose the tool to display the image outputted by dot.
+#   -  Provide options to choose the tool to display the image outputted by
+#      dot.
 #   -  Support for all those possible other layouts of git repositories. Bare
 #      repository, a .git file at the root pointing to the real directory,
-#      environment variables etc. Most probably by using git commands exclusive
-#      opposed to directly access files within .git, or by asking git for the
-#      path to the repository.
+#      environment variables etc. Most probably by using git commands
+#      exclusive opposed to directly access files within .git, or by asking
+#      git for the path to the repository.
 #   -  Read gitrepository-layou(1) to find out more things which could be
 #      displayed
 #   -  To be on the safe side, quote _all_ non-alphanumeric characters in
