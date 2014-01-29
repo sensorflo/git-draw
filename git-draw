@@ -176,14 +176,14 @@ function print-dot-references {
         if ( ($other !~ m/^[a-f0-9]+$/) &&
              0!=system("git show-ref --verify --quiet -- $other") ) {
           print "  $dotid_me [style=filled, fillcolor=red, " .
-            "label=\"{{ref$reftype|$me}|$other (referee does not exist)}\"]\n"; 
+            "label=\"{{ref$reftype|$me}|$other (referee does not exist)\\l}\"]\n"; 
         } else {
           if ($me eq "HEAD") {
              $fillcolor="gray30";
              $fontcolorelement = "fontcolor=white, ";
           }
           print "  $dotid_me [style=filled, fillcolor=$fillcolor, $fontcolorelement " .
-            "label=\"{{ref$reftype|$me}|$other}\"]\n"; 
+            "label=\"{{ref$reftype|$me}|$other\\l}\"]\n"; 
           print "  $dotid_me -> $dotid_other\n";
         }
       }'
@@ -211,8 +211,9 @@ function print-dot-ref-logs {
         $content = $content . $id_short . $_;
   
         END {
+          $trailing = (substr($content,-2) eq "\\l") ? "" : "\\l"; 
           print "  $dotid_reflog [color=gray90, fontcolor=gray, " .
-            "label=\"{{reflog|$refname}|$content}\"]\n";
+            "label=\"{{reflog|$refname}|$content$trailing}\"]\n";
         }' 
   done
 }
@@ -227,8 +228,9 @@ function print-dot-index {
       $content = $content . $_;
     }
     END {
+      $trailing = (substr($content,-2) eq "\\l") ? "" : "\\l"; 
       print "  index [style=filled, fillcolor=lightcyan, " .
-        "label=\"{{index}|$content}\"]\n";
+        "label=\"{{index}|$content$trailing}\"]\n";
     }'
 }
 
