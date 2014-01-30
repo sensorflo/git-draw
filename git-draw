@@ -142,7 +142,7 @@ function print-dot-objects {
       *)      fillcolor=white;;
     esac
     echo "  $dotid [fillcolor=$fillcolor, style=\"filled,rounded\", "\
-      "label=\"{{obj:$object_type|$id}|$objcontent}\"]"
+      "label=\"{{obj:$object_type|<id>$id}|<content>$objcontent}\"]"
 
     # todo: use git's commands to extract the object references
     # BUG: must escape stuff that .dot interprets (\n,\l,\l,|,{},...)
@@ -150,8 +150,8 @@ function print-dot-objects {
     # BUG(obsolete when using git's cmds): in a blob or commit-msg, would also
     #   replace what looks like a sha1
     git cat-file -p $id |
-      perl -ne 'print "  '$dotid' -> _" .
-        `git rev-parse --short=4 $1` if /([a-f0-9]{40})/'
+      perl -ne 'print "  '$dotid':content -> _" .
+        `git rev-parse --short=4 $1` . ":id" if /([a-f0-9]{40})/'
   done
 
   git fsck --cache --unreachable --dangling 2>/dev/null |
@@ -175,15 +175,15 @@ function print-dot-references {
         if ( ($other !~ m/^[a-f0-9]+$/) &&
              0!=system("git show-ref --verify --quiet -- $other") ) {
           print "  $dotid_me [style=filled, fillcolor=red, " .
-            "label=\"{{ref$reftype|$me}|$other (referee does not exist)\\l}\"]\n"; 
+            "label=\"{{ref$reftype|<id>$me}|<content>$other (referee does not exist)\\l}\"]\n"; 
         } else {
           if ($me eq "HEAD") {
              $fillcolor="gray30";
              $fontcolorelement = "fontcolor=white, ";
           }
           print "  $dotid_me [style=filled, fillcolor=$fillcolor, $fontcolorelement " .
-            "label=\"{{ref$reftype|$me}|$other\\l}\"]\n"; 
-          print "  $dotid_me -> $dotid_other\n";
+            "label=\"{{ref$reftype|<id>$me}|<content>$other\\l}\"]\n"; 
+          print "  $dotid_me:content -> $dotid_other:id\n";
         }
       }'
 }
@@ -202,7 +202,7 @@ function print-dot-ref-logs {
         if (m/^([a-f0-9]+).*@\{\d+\}: (.*?)$/) { $id_any=$1; $msg=$2; }
         elsif (m/^([a-f0-9]+)/) { $id_any=$1; $msg="<lastentry>"; }
         $id_short = substr(`git rev-parse --short=4 $id_any`,0,-1);
-        print "  $dotid_reflog -> _$id_short [color=gray90]\n";
+        print "  $dotid_reflog:content -> _$id_short:id [color=gray90]\n";
   
         s/^[a-f0-9]+//;         # strip sha1; $id_short will be used instead
         s/([<> "{}|\\])/\\$1/g; # quote for dot
@@ -212,7 +212,7 @@ function print-dot-ref-logs {
         END {
           $trailing = (substr($content,-2) eq "\\l") ? "" : "\\l"; 
           print "  $dotid_reflog [color=gray90, fontcolor=gray, " .
-            "label=\"{{reflog|logs/$refname}|$content$trailing}\"]\n";
+            "label=\"{{reflog|<id>logs/$refname}|<content>$content$trailing}\"]\n";
         }' 
   done
 }
@@ -220,7 +220,7 @@ function print-dot-ref-logs {
 function print-dot-index {
   git ls-files --stage --abbrev=4 | perl -ne '
     if (/^[0-9]+\s+([a-f0-9]+)/) {
-      print "  index -> _$1\n";
+      print "  index:content -> _$1:id\n";
 
       s/([<> "{}|\\])/\\$1/g; # quote for dot
       s/\n/\\l/;              # \l instead newline
@@ -229,7 +229,7 @@ function print-dot-index {
     END {
       $trailing = (substr($content,-2) eq "\\l") ? "" : "\\l"; 
       print "  index [style=filled, fillcolor=lightcyan, " .
-        "label=\"{{index}|$content$trailing}\"]\n";
+        "label=\"{{index}|<content>$content$trailing}\"]\n";
     }'
 }
 
