@@ -142,7 +142,7 @@ function print-dot-objects {
     dotid="_$id"
     object_type=$(git cat-file -t $id)
     objcontent=$(git cat-file -p $id | abbreviate-sha1 |
-      perl -pe 's/([^a-zA-Z0-9\n\r])/\\$1/g; s/\r?\n/\\l/;')
+      perl -pe 's/([^a-zA-Z0-9\n\r])/\\$1/g; s/(\r?\n)?$/\\l/;')
     case $object_type in
       commit) fillcolor=palegreen1;;
       tag)    fillcolor=lightyellow;;  
@@ -215,7 +215,8 @@ function print-dot-ref-logs {
   
         s/^[a-f0-9]+//;            # strip sha1; $id_short will be used instead
         s/([^a-zA-Z0-9\n])/\\$1/g; # quote for dot
-        s/\r?\n/\\l/;              # \l instead newline
+        s/(\r?\n)?$/\\l/;          # \l instead \n newline, and ensure \l at
+                                   # end of content
         $content = $content . $id_short . $_;
   
         END {
@@ -232,7 +233,8 @@ function print-dot-index {
       print "  index -> _$1\n";
 
       s/([^a-zA-Z0-9\r\n])/\\$1/g; # quote for dot
-      s/\r?\n/\\l/;                # \l instead \n style newline
+      s/(\r?\n)?$/\\l/;            # \l instead \n newline, and ensure \l at
+                                   # end of content
       $content = $content . $_;
     }
     END {
