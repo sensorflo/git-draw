@@ -7,14 +7,16 @@
 #   git-draw [OPTION]...
 #
 # PREREQUISITES
-#   You don't need all of these if you use git-draw with certain options.
+#   You don't need graphviz or imagemagick if you use git-draw with certain
+#   options.
 #
+#   - perl
 #   - graphviz (http://www.graphviz.org/)
 #   - imagemagick (http://www.imagemagick.org)
 #
 #   If you have apt you can install these with:
 #
-#     sudo apt-get install graphviz imagemagick
+#     sudo apt-get install perl graphviz imagemagick
 #
 # DESCRIPTION
 #   git-draw is composed of three main steps, where the 2nd and 3rd are just
@@ -280,6 +282,13 @@ fi
 # check preconditions
 if [ ! -d .git ]; then
   echo "Not a git repository" >&2
+  exit 1
+fi
+if ! which perl >&2 >/dev/null; then
+  cat >&2 <<EOF
+perl not found. If you have apt-get, you can install it with 'sudo apt-get
+install perl'.
+EOF
   exit 1
 fi
 
