@@ -184,20 +184,44 @@ print_dot_references() {
         ($mequoted = $me) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
         $reftype = "";
         $fillcolor = "gray";
-        if ($me =~ m@^refs/heads/@) { $reftype = ":local branch"; }
+        $configmetadata = "";
+        if ($me =~ m@^refs/heads/@) {
+          $reftype = ":local branch";
+          ($me_short = $me) =~ s@^refs/heads/@@;
+          $remote = substr(`git config --get branch\\.$me_short\\.remote`,0,-1);
+          $merge = substr(`git config --get branch\\.$me_short\\.merge`,0,-1);
+          if ($remote && $merge) {
+            if ($remote eq ".") {
+              $dotid_merge = "_" . (($tmp = $merge) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
+            } else {
+              $dotid_merge_core = $merge;
+              $dotid_merge_core =~ s@^refs/heads/@@;
+              $dotid_merge_core =~ s@([^a-zA-Z0-9_])@___@g;
+              $dotid_remote = (($tmp = $remote) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
+              $dotid_merge = "_refs___remotes___${dotid_remote}___${dotid_merge_core}";
+            }
+            print "  $dotid_me -> $dotid_merge [style=dotted, color=gray, fontcolor=gray, " .
+              "label=\"upstream branch\"]\n";
+            $tmp = "remote = $remote\nmerge = $merge\n";
+            $tmp =~ s/([^a-zA-Z0-9\n])/\\$1/g; # quote for dot
+            $tmp =~ s/\n/\\l/g;                # \l instead \n newline
+            $configmetadata = "|$tmp"
+          }
+        }
         elsif ($me =~ m@^refs/remotes/@) { $reftype = ":remote tracking branch"; }
         elsif ($me =~ m@^refs/tags/@) { $reftype = ":tag"; $fillcolor="lightyellow"; }
         if ( ($other !~ m/^[a-f0-9]+$/) &&
              0!=system("git show-ref --verify --quiet -- $other") ) {
           print "  $dotid_me [style=filled, fillcolor=red, " .
-            "label=\"{{ref$reftype|$mequoted}|$otherquoted (referee does not exist)\\l}\"]\n"; 
+            "label=\"{{ref$reftype|$mequoted}|" .
+            "$otherquoted (referee does not exist)\\l$configmetadata}\"]\n";
         } else {
           if ($me eq "HEAD") {
              $fillcolor="gray30";
              $fontcolorelement = "fontcolor=white, ";
           }
           print "  $dotid_me [style=filled, fillcolor=$fillcolor, $fontcolorelement " .
-            "label=\"{{ref$reftype|$mequoted}|$otherquoted\\l}\"]\n"; 
+            "label=\"{{ref$reftype|$mequoted}|$otherquoted\\l$configmetadata}\"]\n";
           print "  $dotid_me -> $dotid_other\n";
         }
       }'
@@ -264,7 +288,7 @@ print_dot() {
   echo "  subgraph cluster_0 {"
   echo "    color=gray80;"
   echo "    label = \"legend\\l\";"
-  echo "    legend_node [label=\"{{type:subtype|id/name}|content\\l}\"]"
+  echo "    legend_node [label=\"{{type:subtype|id/name}|content\\l|metadata from config\\l}\"]"
   echo "  }"
 
   print_dot_objects
