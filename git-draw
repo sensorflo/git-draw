@@ -176,8 +176,8 @@ print_dot_references() {
   ls_all_refs |
     perl -ne '
       if (m@(\S+)\s+(\S+?)$@) {
-        $me = $2; 
-        $other = $1; 
+        $me = $2;
+        $other = $1;
         $dotid_me = "_" . (($tmp = $me) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
         $dotid_other = "_" . (($tmp = $other) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
         ($otherquoted = $other) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
@@ -208,8 +208,14 @@ print_dot_references() {
             $configmetadata = "|$tmp"
           }
         }
-        elsif ($me =~ m@^refs/remotes/@) { $reftype = ":remote tracking branch"; }
-        elsif ($me =~ m@^refs/tags/@) { $reftype = ":tag"; $fillcolor="lightyellow"; }
+        elsif ($me =~ m@^refs/remotes/@) {
+          $reftype = ":remote tracking branch";
+          $fillcolor = "yellow";
+        }
+        elsif ($me =~ m@^refs/tags/@) {
+          $reftype = ":tag";
+          $fillcolor = "lightyellow";
+        }
         if ( ($other !~ m/^[a-f0-9]+$/) &&
              0!=system("git show-ref --verify --quiet -- $other") ) {
           print "  $dotid_me [style=filled, fillcolor=red, " .
@@ -224,7 +230,7 @@ print_dot_references() {
             "label=\"{{ref$reftype|$mequoted}|$otherquoted\\l$configmetadata}\"]\n";
           print "  $dotid_me -> $dotid_other\n";
         }
-      }'
+      }' 
 }
 
 print_dot_ref_logs() {
