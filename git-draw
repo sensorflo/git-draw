@@ -204,32 +204,40 @@ print_dot_references() {
 }
 
 print_dot_ref_logs() {
+  firstiter="non-empty-string" # i.e. true
   git show-ref --abbrev=4 |
+    # The following code depends upon HEAD being the last in the list
     perl -pe 's@^.*?(\brefs/\S*)$@$1@; END { print "HEAD\n";}' |
     while read refname; do
-      # 8eb068f master@{11}: commit: tempo-ext: new version
-      git reflog $refname | perl -ne '
-        BEGIN {
-          $refname = "'$refname'";
-          $dotid_reflog = "reflog_" . (($tmp = $refname) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
-        }
-  
-        if (m/^([a-f0-9]+).*@\{\d+\}: (.*?)$/) { $id_any=$1; $msg=$2; }
-        elsif (m/^([a-f0-9]+)/) { $id_any=$1; $msg="<lastentry>"; }
-        $id_short = substr(`git rev-parse --short=4 $id_any`,0,-1);
-        print "  $dotid_reflog -> _$id_short [color=gray90]\n";
-  
-        s/^[a-f0-9]+//;            # strip sha1; $id_short will be used instead
-        s/([^a-zA-Z0-9\n])/\\$1/g; # quote for dot
-        s/(\r?\n)?$/\\l/;          # \l instead \n newline, and ensure \l at
-                                   # end of content
-        $content = $content . $id_short . $_;
-  
-        END {
-          $trailing = (substr($content,-2) eq "\\l") ? "" : "\\l"; 
-          print "  $dotid_reflog [color=gray90, fontcolor=gray, " .
-            "label=\"{{reflog|logs/$refname}|$content$trailing}\"]\n";
-        }' 
+      # work around the problem that 'git reflog show HEAD' results in an
+      # error when HEAD contains refs/heads/master but refs/heads/master does
+      # not exist, which is the case after 'git init'.
+      if [ ! \( "$firstiter" -a \( "$refname" = HEAD \) \) ]; then
+        # 8eb068f master@{11}: commit: tempo-ext: new version
+        git reflog show $refname | perl -ne '
+          BEGIN {
+            $refname = "'$refname'";
+            $dotid_reflog = "reflog_" . (($tmp = $refname) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
+          }
+          
+          if (m/^([a-f0-9]+).*@\{\d+\}: (.*?)$/) { $id_any=$1; $msg=$2; }
+          elsif (m/^([a-f0-9]+)/) { $id_any=$1; $msg="<lastentry>"; }
+          $id_short = substr(`git rev-parse --short=4 $id_any`,0,-1);
+          print "  $dotid_reflog -> _$id_short [color=gray90]\n";
+          
+          s/^[a-f0-9]+//;            # strip sha1; $id_short will be used instead
+          s/([^a-zA-Z0-9\n])/\\$1/g; # quote for dot
+          s/(\r?\n)?$/\\l/;          # \l instead \n newline, and ensure \l at
+                                     # end of content
+          $content = $content . $id_short . $_;
+          
+          END {
+            $trailing = (substr($content,-2) eq "\\l") ? "" : "\\l"; 
+            print "  $dotid_reflog [color=gray90, fontcolor=gray, " .
+              "label=\"{{reflog|logs/$refname}|$content$trailing}\"]\n";
+          }' 
+      fi
+    firstiter="" # empty stringt, i.e. false
   done
 }
 
