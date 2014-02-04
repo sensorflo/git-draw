@@ -97,11 +97,7 @@ EOF
 #      git for the path to the repository.
 #   -  Read gitrepository-layou(1) to find out more things which could be
 #      displayed
-#   -  To be on the safe side, quote _all_ non-alphanumeric characters in
-#      label strings of a dot 'program'.
 #   -  Draw multiple repos in one image. Usefull to demonstrate distributed git.
-#   -  Add a fourth element (beside type/id/content) to the things: also the
-#      config properties. E.g for a branch it's remote tracking branch.
 #   -  Draw packed objects and refs in a subgraph respectively.
 #   -  Allow that the current working directory can be any subdirectory of a
 #      git project. Similarly, allow to specify the git repository via command
