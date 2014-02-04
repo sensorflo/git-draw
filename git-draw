@@ -78,16 +78,13 @@ EOF
 #      of the repository was in.
 #   -  Optionally use temporary files which the user does not directly see
 #   -  Optionally omit drawing the content of all/certain objects/refs so a
-#      bit
-#      larger than tiny repositories still draw usefully.
+#      bit larger than tiny repositories still draw usefully.
 #   -  tree objects / reflogs shall fan out graph edges at corresponding line
-#      in
-#      content
+#      in content
 #   -  Amend type cell (top left) and id cell (top right) with the prefix
 #      'type=' and 'id=' to be very clear. Optionally turn off with options.
 #   -  add a graph title / caption which tells the git command(s) since the
-#      last
-#      version of the repository content.
+#      last version of the repository content.
 #   -  Provide options to choose the tool to display the image outputted by
 #      dot.
 #   -  Support for all those possible other layouts of git repositories. Bare
