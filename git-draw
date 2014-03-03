@@ -318,7 +318,6 @@ elif [ \( $# = 1 \) -a \( "$1" = "--help" \) ] ; then
 else
   echo "Invalid options" >&2
   print_usage_and_exit 1 >&2
-  exit 1
 fi
 
 # check preconditions
