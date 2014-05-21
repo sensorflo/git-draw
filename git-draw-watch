@@ -17,8 +17,8 @@ trap "kill -- -$BASHPID" EXIT
 
 # Re-run command if the git file system has changed
 while true; do
-    sha=`ls -lR $gitdir | sha1sum`
-    if [ "$sha" != "$previous_sha" ]; then 
+    sha=`ls -lR $gitdir | shasum -a 1`
+    if [ "$sha" != "$previous_sha" ]; then
         echo "--> Files changed, running $@"
 
         # Kill subprocesses (should add a command line option to select whether to do this)
