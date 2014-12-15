@@ -147,7 +147,7 @@ print_dot_objects() {
       tag)    fillcolor=lightyellow;;  
       *)      fillcolor=white;;
     esac
-    echo "  $dotid [fillcolor=$fillcolor, style=\"filled,rounded\", "\
+    printf %s "  $dotid [fillcolor=$fillcolor, style=\"filled,rounded\", "\
       "label=\"{{obj:$object_type|$id}|$objcontent}\"]"
 
     # todo: use git's commands to extract the object references
