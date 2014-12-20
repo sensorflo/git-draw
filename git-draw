@@ -95,6 +95,25 @@
 #   --hide-blobcontent
 #     Hide blob content
 #
+#   --color-scheme <color scheme>
+#     Choose color scheme. <color scheme> can be one of: default, set312,
+#     spectral11, blues9, brbg11, bupu9, dark28, paired12, pastel19, set19
+#
+#   --color-commit <color>
+#     Set color for commit objects
+#
+#   --color-tag <color>
+#     Set color for tag objects
+#
+#   --color-tree <color>
+#     Set color for tree objects 
+#
+#   --color-blob <color>
+#     Set color for blob objects
+#
+#   --color-default <color>
+#     Set default color
+#
 # AUTHOR
 #   Written by Florian Kaufmann <sensorflo@gmail.com>
 #   Modifications by Nathan Doss <nathan.doss@gmail.com>
@@ -107,6 +126,67 @@
 # 
 # SEE ALSO
 #   git(1)
+
+# define color schemes
+color_scheme_default_commit="palegreen1"
+color_scheme_default_tree="lightyellow"
+color_scheme_default_blob="white"
+color_scheme_default_tag="white"
+color_scheme_default_default="white"
+
+color_scheme_set312_commit="/set312/7"
+color_scheme_set312_tree="/set312/6"
+color_scheme_set312_blob="/set312/3"
+color_scheme_set312_tag="/set312/12"
+color_scheme_set312_default="white"
+
+color_scheme_spectral11_commit="/spectral11/8"
+color_scheme_spectral11_tree="/spectral11/4"
+color_scheme_spectral11_blob="/spectral11/10"
+color_scheme_spectral11_tag="/spectral11/5"
+color_scheme_spectral11_default="white"
+
+color_scheme_blues9_commit="/blues9/3"
+color_scheme_blues9_tree="/blues9/5"
+color_scheme_blues9_blob="/blues9/7"
+color_scheme_blues9_tag="/blues9/2"
+color_scheme_blues9_default="white"
+
+color_scheme_brbg11_commit="/brbg11/3"
+color_scheme_brbg11_tree="/brbg11/5"
+color_scheme_brbg11_blob="/brbg11/7"
+color_scheme_brbg11_tag="/brbg11/9"
+color_scheme_brbg11_default="white"
+
+color_scheme_bupu9_commit="/bupu9/2"
+color_scheme_bupu9_tree="/bupu9/4"
+color_scheme_bupu9_blob="/bupu9/6"
+color_scheme_bupu9_tag="/bupu9/8"
+color_scheme_bupu9_default="white"
+
+color_scheme_dark28_commit="/dark28/5"
+color_scheme_dark28_tree="/dark28/2"
+color_scheme_dark28_blob="/dark28/3"
+color_scheme_dark28_tag="/dark28/6"
+color_scheme_dark28_default="white"
+
+color_scheme_paired12_commit="/paired12/3"
+color_scheme_paired12_tree="/paired12/1"
+color_scheme_paired12_blob="/paired12/7"
+color_scheme_paired12_tag="/paired12/11"
+color_scheme_paired12_default="white"
+
+color_scheme_pastel19_commit="/pastel19/3"
+color_scheme_pastel19_tree="/pastel19/5"
+color_scheme_pastel19_blob="/pastel19/4"
+color_scheme_pastel19_tag="/pastel19/6"
+color_scheme_pastel19_default="white"
+
+color_scheme_set19_commit="/set19/3"
+color_scheme_set19_tree="/set19/5"
+color_scheme_set19_blob="/set19/2"
+color_scheme_set19_tag="/set19/6"
+color_scheme_set19_default="white"
 
 # set defaults
 dotfilename=git-draw.dot
@@ -124,6 +204,14 @@ showtagcontent=1
 showblobcontent=1
 export GIT_DIR=$(git rev-parse --git-dir)
 export GIT_WORK_TREE=$(git rev-parse --show-toplevel)
+colorscheme="default"
+
+# set colors (hack ... got to be a better way)
+color_commit=$(eval "echo \${color_scheme_${colorscheme}_commit}")
+color_tag=$(eval "echo \${color_scheme_${colorscheme}_tag}")
+color_tree=$(eval "echo \${color_scheme_${colorscheme}_tree}")
+color_blob=$(eval "echo \${color_scheme_${colorscheme}_blob}")
+color_default=$(eval "echo \${color_scheme_${colorscheme}_default}")
 
 # $1 = exit code
 print_usage_and_exit() {
@@ -147,6 +235,14 @@ Usage: git-draw [options]
   --hide-tagcontent              Don't display tag content
   --hide-treecontent             Don't display tree content
   --hide-blobcontent             Don't display blob content
+  --color-scheme <color scheme>  Choose color scheme. Can be one of: default,
+                                 set312, spectral11, blues9, brbg11, bupu9,
+                                 dark28, paired12, pastel19, set19
+  --color-commit <color>         Set color for commit objects
+  --color-tag <color>            Set color for tag objects
+  --color-tree <color>           Set color for tree objects
+  --color-blob <color>           Set color for blob objects
+  --color-default <color>        Set default color
 
 The primary documentation is at the top of the git-draw script itself.
 EOF
@@ -222,35 +318,35 @@ print_dot_objects() {
 
     case $object_type in
     commit)
-      fillcolor=palegreen1
+      fillcolor="$color_commit"
       if [ $showcommitcontent != 1 ]; then
         objcontent=""
       fi
       ;;
     tag)
-      fillcolor=lightyellow
+      fillcolor="$color_tag"
       if [ $showtagcontent != 1 ]; then
         objcontent=""
       fi
       ;;
     tree)
-      fillcolor=white
+      fillcolor="$color_tree"
       if [ $showtreecontent != 1 ]; then
         objcontent=""
       fi
       ;;
     blob)
-      fillcolor=white
+      fillcolor="$color_blob"
       if [ $showblobcontent != 1 ]; then
         objcontent=""
       fi
       ;;
     *)
-      fillcolor=white
+      fillcolor="$color_default"
       ;;
     esac
 
-    printf %s "  $dotid [fillcolor=$fillcolor, style=\"filled,rounded\", "\
+    printf %s "  $dotid [fillcolor=\"$fillcolor\", style=\"filled,rounded\", "\
       "label=\"{{obj:$object_type|$id}|$objcontent}\"]"
 
     # todo: use git's commands to extract the object references
@@ -494,6 +590,40 @@ do
 
     --hide-index)
       showindex=0
+      ;;
+
+    --color-scheme)
+      if ! perl -e 'if ($ARGV[0] !~ m/^(default|set312|spectral11|blues9|
+          brbg11|bupu9|dark28|paired12|pastel19|set19)$/x) { exit(1); }' "$2" ; then
+        echo "ERROR: Invalid color scheme ($2)." >&2
+        print_usage_and_exit 1 >&2
+      fi
+      colorscheme=$2
+      color_commit=$(eval "echo \${color_scheme_${colorscheme}_commit}")
+      color_tag=$(eval "echo \${color_scheme_${colorscheme}_tag}")
+      color_tree=$(eval "echo \${color_scheme_${colorscheme}_tree}")
+      color_blob=$(eval "echo \${color_scheme_${colorscheme}_blob}")
+      color_default=$(eval "echo \${color_scheme_${colorscheme}_default}")
+      shift
+      ;;
+
+    --color-*)
+      case "$1" in
+      --color-commit) color_commit=$2;;
+      --color-tag) color_tag=$2;;
+      --color-tree) color_tree=$2;;
+      --color-blob) color_blob=$2;;
+      --color-default) color_default=$2;;
+      *) echo "ERROR: unknown option ($1)" >&2;
+         print_usage_and_exit 1 >&2;;
+      esac
+      # prevent the case that the user supplied color can have special meaning
+      # in the dot script
+      if ! perl -e 'if ($ARGV[0] =~ m/\\|"/) { exit(1); }' "$2" ; then
+        echo "ERROR: Argument to $1 cannot contain \\ or \"" >&2
+        exit 1
+      fi
+      shift
       ;;
 
     --* | -?)
