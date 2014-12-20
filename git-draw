@@ -114,6 +114,14 @@
 #   --color-default <color>
 #     Set default color
 #
+#   --orientation <orientation>
+#     Change the layout orientation of the graph. Must be one of the
+#     following:
+#       TB  top to bottom, the default
+#       BT  bottom to top
+#       LR  left to right
+#       RL  right to left
+#
 # AUTHOR
 #   Written by Florian Kaufmann <sensorflo@gmail.com>
 #   Modifications by Nathan Doss <nathan.doss@gmail.com>
@@ -202,6 +210,7 @@ showcommitcontent=1
 showtreecontent=1
 showtagcontent=1
 showblobcontent=1
+orientation="TB"
 export GIT_DIR=$(git rev-parse --git-dir)
 export GIT_WORK_TREE=$(git rev-parse --show-toplevel)
 colorscheme="default"
@@ -243,6 +252,12 @@ Usage: git-draw [options]
   --color-tree <color>           Set color for tree objects
   --color-blob <color>           Set color for blob objects
   --color-default <color>        Set default color
+  --orientation <orientation>    Change the graph orientation.
+                                 <orientation> must be one of the following:
+                                 TB  top to bottom, the default
+                                 BT  bottom to top
+                                 LR  left to right
+                                 RL  right to left
 
 The primary documentation is at the top of the git-draw script itself.
 EOF
@@ -483,6 +498,8 @@ print_dot_index() {
 print_dot() { 
   echo "digraph structs {"
   echo "  node [shape=record,fontsize=11];"
+  echo "  rankdir=\"$orientation\";"
+
   if [ $showlegend = 1 ]; then
     echo "  subgraph cluster_0 {"
     echo "    color=gray80;"
@@ -623,6 +640,15 @@ do
         echo "ERROR: Argument to $1 cannot contain \\ or \"" >&2
         exit 1
       fi
+      shift
+      ;;
+
+    --orientation)
+      if ! perl -e 'if ($ARGV[0] !~ m/^(TB|BT|LR|RL)$/) { exit(1); }' "$2" ; then
+        echo "ERROR: Invalid orientation ($2)." >&2
+        print_usage_and_exit 1 >&2
+      fi
+      orientation=$2
       shift
       ;;
 
