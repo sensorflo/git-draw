@@ -64,6 +64,9 @@
 #   --display-cmd <command>
 #     Command to use to display image
 #
+#   --sha1-length <length>
+#     Number of sha1 digits to display in the graph. Must be a number between
+#     4 and 40 inclusive.
 #
 # AUTHOR
 #   Written by Florian Kaufmann <sensorflo@gmail.com>
@@ -82,6 +85,7 @@
 dotfilename=git-draw.dot
 imgfilename=git-draw.png
 displaycmd=display
+sha1length=4
 export GIT_DIR=$(git rev-parse --git-dir)
 export GIT_WORK_TREE=$(git rev-parse --show-toplevel)
 
@@ -97,6 +101,7 @@ Usage: git-draw [options]
   --dot-filename <filename>      Name of the dot file to generate
   --image-filename <filename>    Name of the image file to generate
   --display-cmd <command>        Command to use to display image
+  --sha1-length <length>         Number of sha1 digits to display
 
 The primary documentation is at the top of the git-draw script itself.
 EOF
@@ -129,7 +134,7 @@ EOF
 
 abbreviate_sha1() {
   # BUG: in a blob or commit-msg, would also replace what looks like a sha1
-  perl -pe 's/([0-9a-f]{40})/substr(`git rev-parse --short=4 $1`,0,-1)/eg'
+  perl -pe 's/([0-9a-f]{40})/substr(`git rev-parse --short='$sha1length' $1`,0,-1)/eg'
 }
 
 ls_all_objects() {
@@ -147,11 +152,11 @@ ls_all_objects() {
 
 ls_all_refs() {
   # todo: refs like MERGE_HEAD are still not printed
-  git show-ref --abbrev=4
+  git show-ref --abbrev=$sha1length
   cat $GIT_DIR/HEAD | perl -ne '
     m/^(?:ref: )?(.*?)$/;
     if ($1 =~ m/([a-f0-9]{40})/) {
-      $idshort = substr(`git rev-parse --short=4 $1`,0,-1);
+      $idshort = substr(`git rev-parse --short='$sha1length' $1`,0,-1);
     }
     else { $idshort = $1 }
     print $idshort . " HEAD\n";'
@@ -159,7 +164,7 @@ ls_all_refs() {
 
 ls_all_objects_short() {
   ls_all_objects | while read sha1; do
-    git rev-parse --short=4 $sha1
+    git rev-parse --short=$sha1length $sha1
   done
 }
 
@@ -184,11 +189,11 @@ print_dot_objects() {
     #   replace what looks like a sha1
     git cat-file -p $id |
       perl -ne 'print "  '$dotid' -> _" .
-        `git rev-parse --short=4 $1` if /([a-f0-9]{40})/'
+        `git rev-parse --short='$sha1length' $1` if /([a-f0-9]{40})/'
   done
 
   git fsck --cache --unreachable --dangling 2>/dev/null |
-   perl -ne 'print "  _" . substr(`git rev-parse --short=4 $1`,0,-1) .
+   perl -ne 'print "  _" . substr(`git rev-parse --short='$sha1length' $1`,0,-1) .
      " [style=dotted]\n" if /^(?:dangling|unreachable)\b.*?([a-f0-9]{40})/'
 }
 
@@ -255,7 +260,7 @@ print_dot_references() {
 
 print_dot_ref_logs() {
   firstiter="non-empty-string" # i.e. true
-  git show-ref --abbrev=4 |
+  git show-ref --abbrev=$sha1length |
     # The following code depends upon HEAD being the last in the list
     perl -pe 's@^.*?(\brefs/\S*)$@$1@; END { print "HEAD\n";}' |
     while read refname; do
@@ -272,7 +277,7 @@ print_dot_ref_logs() {
           
           if (m/^([a-f0-9]+).*@\{\d+\}: (.*?)$/) { $id_any=$1; $msg=$2; }
           elsif (m/^([a-f0-9]+)/) { $id_any=$1; $msg="<lastentry>"; }
-          $id_short = substr(`git rev-parse --short=4 $id_any`,0,-1);
+          $id_short = substr(`git rev-parse --short='$sha1length' $id_any`,0,-1);
           print "  $dotid_reflog -> _$id_short [color=gray90]\n";
           
           s/^[a-f0-9]+//;            # strip sha1; $id_short will be used instead
@@ -292,7 +297,7 @@ print_dot_ref_logs() {
 }
 
 print_dot_index() {
-  git ls-files --stage --abbrev=4 | perl -ne '
+  git ls-files --stage --abbrev=$sha1length | perl -ne '
     if (/^[0-9]+\s+([a-f0-9]+)/) {
       print "  index -> _$1\n";
 
@@ -363,6 +368,15 @@ do
 
     --display-cmd)
       displaycmd=$2
+      shift
+      ;;
+
+    --sha1-length)
+      if ! perl -e 'if ($ARGV[0]=~m/\D/ || $ARGV[0]<4 || $ARGV[0]>40) { exit(1); }' "$2" ; then
+        echo "ERROR: Argument to --sha1-lenght must be a number between 4 and 40 inclusive." >&2
+        exit 1
+      fi
+      sha1length=$2
       shift
       ;;
 
