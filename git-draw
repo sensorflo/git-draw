@@ -361,6 +361,14 @@ do
       print_usage_and_exit 1 >&2
       ;;
 
+    # Split apart combined short options
+    -*)
+      split=$1
+      shift
+      set -- $(echo "$split" | cut -c 2- | sed 's/./-& /g') "$@"
+      continue
+      ;;
+
     *)
       echo "ERROR: only options are accepted, no further arguments ($1)" >&2
       print_usage_and_exit 1 >&2
