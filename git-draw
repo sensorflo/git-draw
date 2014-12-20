@@ -304,16 +304,39 @@ print_dot() {
 # process options
 dotfilename=git-draw.dot
 imgfilename=git-draw.png
-if [ $# = 0 ]; then
-  :
-elif [ \( $# = 1 \) -a \( "$1" = "-p" -o "$1" = "--print-only" \) ] ; then
-  print_only=1
-elif [ \( $# = 1 \) -a \( "$1" = "-i" -o "$1" = "--image-only" \) ] ; then
-  image_only=1
-elif [ \( $# = 1 \) -a \( "$1" = "--help" \) ] ; then
-  print_usage_and_exit 0
-else
-  echo "Invalid options" >&2
+while test $# -gt 0
+do
+  case $1 in
+
+    -h | --help)
+      print_usage_and_exit 0
+      ;;
+
+    -p | --print-only)
+      print_only=1
+      ;;
+
+    -i | --image-only)
+      image_only=1
+      ;;
+
+    --* | -?)
+      echo "ERROR: unknown option ($1)" >&2
+      print_usage_and_exit 1 >&2
+      ;;
+
+    *)
+      echo "ERROR: only options are accepted, no further arguments ($1)" >&2
+      print_usage_and_exit 1 >&2
+      ;;
+  esac
+
+  shift
+done
+
+# check that image_only & print_only aren't both selected
+if [ "$image_only" -a "$print_only" ]; then
+  echo "ERROR: --image_only and --print_only are mutualy exclusive options" >&2
   print_usage_and_exit 1 >&2
 fi
 
