@@ -38,6 +38,9 @@
 #   references aka pointers and graphs.
 #
 # OPTIONS
+#   -h, --help
+#     Prints a help message and exits.
+#
 #   -p, --print-only
 #     Only prints the .dot file to STDOUT. Mutually exclusive with
 #     --image-only.
@@ -48,6 +51,7 @@
 #
 # AUTHOR
 #   Written by Florian Kaufmann <sensorflo@gmail.com>
+#   Modifications by Nathan Doss <nathan.doss@gmail.com>
 #
 # COPYRIGHT
 #   Florian Kaufmann 2014. License GPLv3+: GNU GPL version 3 or later
@@ -62,6 +66,7 @@
 print_usage_and_exit() {
   cat <<EOF
 Usage: git-draw [--help] [-p|--print-only] [-i|--image-only]
+  -h|--help        Print help message & exit
   -p|--print-only  Only print .dot to stdout
   -i|--image-only  Only create an image, and a .dot file beforehand
 
