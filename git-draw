@@ -68,6 +68,33 @@
 #     Number of sha1 digits to display in the graph. Must be a number between
 #     4 and 40 inclusive.
 #
+#   --hide-legend
+#     Don't display the legend
+#
+#   --hide-objects
+#     Don't display git objects
+#
+#   --hide-refs
+#     Don't display references
+#
+#   --hide-reflogs
+#     Don't display reflogs
+#
+#   --hide-index
+#     Don't display the index
+#
+#   --hide-commitcontent
+#     Hide commit content
+#
+#   --hide-tagcontent
+#     Hide tag content
+#
+#   --hide-treecontent
+#     Hide tree content
+#
+#   --hide-blobcontent
+#     Hide blob content
+#
 # AUTHOR
 #   Written by Florian Kaufmann <sensorflo@gmail.com>
 #   Modifications by Nathan Doss <nathan.doss@gmail.com>
@@ -86,6 +113,15 @@ dotfilename=git-draw.dot
 imgfilename=git-draw.png
 displaycmd=display
 sha1length=4
+showlegend=1
+showobjects=1
+showrefs=1
+showreflogs=1
+showindex=1
+showcommitcontent=1
+showtreecontent=1
+showtagcontent=1
+showblobcontent=1
 export GIT_DIR=$(git rev-parse --git-dir)
 export GIT_WORK_TREE=$(git rev-parse --show-toplevel)
 
@@ -102,6 +138,15 @@ Usage: git-draw [options]
   --image-filename <filename>    Name of the image file to generate
   --display-cmd <command>        Command to use to display image
   --sha1-length <length>         Number of sha1 digits to display
+  --hide-legend                  Don't display the legend
+  --hide-objects                 Don't display git objects
+  --hide-refs                    Don't display references
+  --hide-reflogs                 Don't display reflogs
+  --hide-index                   Don't display the index
+  --hide-commitcontent           Don't display commit content
+  --hide-tagcontent              Don't display tag content
+  --hide-treecontent             Don't display tree content
+  --hide-blobcontent             Don't display blob content
 
 The primary documentation is at the top of the git-draw script itself.
 EOF
@@ -174,11 +219,37 @@ print_dot_objects() {
     object_type=$(git cat-file -t $id)
     objcontent=$(git cat-file -p $id | abbreviate_sha1 |
       perl -pe 's/([^a-zA-Z0-9\n\r])/\\$1/g; s/(\r?\n)?$/\\l/;')
+
     case $object_type in
-      commit) fillcolor=palegreen1;;
-      tag)    fillcolor=lightyellow;;  
-      *)      fillcolor=white;;
+    commit)
+      fillcolor=palegreen1
+      if [ $showcommitcontent != 1 ]; then
+        objcontent=""
+      fi
+      ;;
+    tag)
+      fillcolor=lightyellow
+      if [ $showtagcontent != 1 ]; then
+        objcontent=""
+      fi
+      ;;
+    tree)
+      fillcolor=white
+      if [ $showtreecontent != 1 ]; then
+        objcontent=""
+      fi
+      ;;
+    blob)
+      fillcolor=white
+      if [ $showblobcontent != 1 ]; then
+        objcontent=""
+      fi
+      ;;
+    *)
+      fillcolor=white
+      ;;
     esac
+
     printf %s "  $dotid [fillcolor=$fillcolor, style=\"filled,rounded\", "\
       "label=\"{{obj:$object_type|$id}|$objcontent}\"]"
 
@@ -316,16 +387,25 @@ print_dot_index() {
 print_dot() { 
   echo "digraph structs {"
   echo "  node [shape=record,fontsize=11];"
-  echo "  subgraph cluster_0 {"
-  echo "    color=gray80;"
-  echo "    label = \"legend\\l\";"
-  echo "    legend_node [label=\"{{type:subtype|id/name}|content\\l|metadata from config\\l}\"]"
-  echo "  }"
-
-  print_dot_objects
-  print_dot_references
-  print_dot_ref_logs
-  print_dot_index
+  if [ $showlegend = 1 ]; then
+    echo "  subgraph cluster_0 {"
+    echo "    color=gray80;"
+    echo "    label = \"legend\\l\";"
+    echo "    legend_node [label=\"{{type:subtype|id/name}|content\\l|metadata from config\\l}\"]"
+    echo "  }"
+  fi
+  if [ $showobjects = 1 ]; then
+    print_dot_objects
+  fi
+  if [ $showrefs = 1 ]; then
+    print_dot_references
+  fi
+  if [ $showreflogs = 1 ]; then
+    print_dot_ref_logs
+  fi
+  if [ $showindex = 1 ]; then
+    print_dot_index
+  fi
   echo "}"
 }
 
@@ -378,6 +458,42 @@ do
       fi
       sha1length=$2
       shift
+      ;;
+
+    --hide-legend)
+      showlegend=0
+      ;;
+
+    --hide-objects)
+      showobjects=0
+      ;;
+
+    --hide-commitcontent)
+      showcommitcontent=0
+      ;;
+
+    --hide-tagcontent)
+      showtagcontent=0
+      ;;
+
+    --hide-treecontent)
+      showtreecontent=0
+      ;;
+
+    --hide-blobcontent)
+      showblobcontent=0
+      ;;
+
+    --hide-refs)
+      showrefs=0
+      ;;
+
+    --hide-reflogs)
+      showreflogs=0
+      ;;
+
+    --hide-index)
+      showindex=0
       ;;
 
     --* | -?)
