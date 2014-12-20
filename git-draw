@@ -61,6 +61,9 @@
 #   --image-filename <filename>
 #     Name of the image file to generate
 #
+#   --display-cmd <command>
+#     Command to use to display image
+#
 #
 # AUTHOR
 #   Written by Florian Kaufmann <sensorflo@gmail.com>
@@ -78,6 +81,7 @@
 # set defaults
 dotfilename=git-draw.dot
 imgfilename=git-draw.png
+displaycmd=display
 export GIT_DIR=$(git rev-parse --git-dir)
 export GIT_WORK_TREE=$(git rev-parse --show-toplevel)
 
@@ -92,6 +96,7 @@ Usage: git-draw [options]
   -w|--work-dir                  Top level git working directory
   --dot-filename <filename>      Name of the dot file to generate
   --image-filename <filename>    Name of the image file to generate
+  --display-cmd <command>        Command to use to display image
 
 The primary documentation is at the top of the git-draw script itself.
 EOF
@@ -356,6 +361,11 @@ do
       shift
       ;;
 
+    --display-cmd)
+      displaycmd=$2
+      shift
+      ;;
+
     --* | -?)
       echo "ERROR: unknown option ($1)" >&2
       print_usage_and_exit 1 >&2
@@ -419,14 +429,20 @@ dot -Tpng "$dotfilename" > "$imgfilename" || exit 1
 if [ "$image_only" = 1 ] ; then
   exit 0
 fi
-if ! which display >&2 >/dev/null; then
+
+if ! which "$displaycmd" >&2 >/dev/null; then
   cat >&2 <<EOF
-display (part of imagemagick) not found. Image '$imgfilename' was generated,
-but I cannot display it. Either use the --image-only option, or install
-imagemagick. If you have apt-get, you can do that with 'sudo apt-get install
-imagemagick'.
+Command to display image not found ($displaycmd).
+An image was generated, but I cannot display it. You might want to make use
+the --image-only or the --display-cmd <command> option.
 EOF
+  if [ "$displaycmd" = "display" ]; then
+  cat >&2 <<EOF
+If you have apt-get, you can install the command 'display' (part of
+imagemagick) with 'sudo apt-get install imagemagick'.
+EOF
+  fi
   exit 1
 fi
-display "$imgfilename"
+"$displaycmd" "$imgfilename"
 
