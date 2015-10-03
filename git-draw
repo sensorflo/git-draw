@@ -307,15 +307,16 @@ ls_all_objects() {
 }
 
 ls_all_refs() {
-  # todo: refs like MERGE_HEAD are still not printed
   git show-ref --abbrev=$sha1length
-  cat $GIT_DIR/HEAD | perl -ne '
-    m/^(?:ref: )?(.*?)$/;
-    if ($1 =~ m/([a-f0-9]{40})/) {
-      $idshort = substr(`git rev-parse --short='$sha1length' $1`,0,-1);
-    }
-    else { $idshort = $1 }
-    print $idshort . " HEAD\n";'
+  for special_ref in .git/*HEAD ; do
+    cat "$special_ref" | perl -ne '
+      m/^(?:ref: )?(.*?)$/;
+      if ($1 =~ m/([a-f0-9]{40})/) {
+        $idshort = substr(`git rev-parse --short='$sha1length' $1`,0,-1);
+      }
+      else { $idshort = $1 }
+      print $idshort . " '"$(basename $special_ref)"'\n";'
+  done
 }
 
 ls_all_objects_short() {
@@ -429,7 +430,7 @@ print_dot_references() {
             "label=\"{{ref$reftype|$mequoted}|" .
             "$otherquoted (referee does not exist)\\l$configmetadata}\"]\n";
         } else {
-          if ($me eq "HEAD") {
+          if ($me =~ m/^[A-Z0-9_]*HEAD$/) {
              $fillcolor="gray30";
              $fontcolorelement = "fontcolor=white, ";
           }
