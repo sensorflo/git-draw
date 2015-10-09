@@ -83,6 +83,9 @@
 #   --hide-index
 #     Don't display the index
 #
+#   --hide-workingtree
+#     Don't display the working tree
+#
 #   --hide-commitcontent
 #     Hide commit content
 #
@@ -223,6 +226,7 @@ showobjects=1
 showrefs=1
 showreflogs=1
 showindex=1
+showworkingtree=1
 showcommitcontent=1
 showtreecontent=1
 showtagcontent=1
@@ -256,6 +260,7 @@ Usage: git-draw [options]
   --hide-refs                    Don't display references
   --hide-reflogs                 Don't display reflogs
   --hide-index                   Don't display the index
+  --hide-workingtree             Don't display the working tree
   --hide-commitcontent           Don't display commit content
   --hide-tagcontent              Don't display tag content
   --hide-treecontent             Don't display tree content
@@ -517,6 +522,80 @@ print_dot_index() {
     }'
 }
 
+print_dot_workingtree() {
+  perl -e '
+    #!/usr/bin/perl -w
+    # todo: more portable by not relying on literal path componenents such as ".",
+    # ".." and "/".
+    use strict;
+    our %isFqNameIgnored;
+    our %isRelNameIgnored;
+    
+    sub print_dot_for_dir {
+        my ($fqParentDirName, $fqParentDirNameDotId, $fqParentDirNameQuoted, $level) = @_;
+        if ($level >= 2) { print "level exeeded\n"; return; }
+    
+        my $parentDirContentQuoted = "";
+    
+        opendir(DIR, $fqParentDirName) or die "cant open dir $fqParentDirName for reading\n";
+        foreach my $relFileName (readdir(DIR)) {
+            my $fqFileName = "$fqParentDirName/$relFileName";
+            if ($isFqNameIgnored{$fqFileName} or $isRelNameIgnored{$relFileName}) {
+                next;
+            }
+            if (not (-f "$fqFileName" or -d "$fqFileName")) {
+                next;
+            }
+    
+            (my $fqFileNameDotId = $fqFileName) =~ s@([^a-zA-Z0-9_])@___@g;
+            print "  $fqParentDirNameDotId -> $fqFileNameDotId\n";
+    
+            (my $relFileNameQuoted = $relFileName) =~ s/([^a-zA-Z0-9\n\r])/\\$1/g;
+            $parentDirContentQuoted = $parentDirContentQuoted . $relFileNameQuoted . "\\l";
+    
+            my $sep = $fqParentDirNameQuoted ? "\\/" : "";
+            my $fqFileNameQuoted = $fqParentDirNameQuoted . $sep . $relFileNameQuoted;
+    
+            if (-f "$fqFileName") {
+                local $/ = undef;
+                open FILE, $fqFileName;
+                my $content = <FILE>;
+                close FILE;
+    
+                (my $contentQuoted = $content) =~ s/([^a-zA-Z0-9\n\r])/\\$1/g;
+                $contentQuoted =~ s/(\r?\n)/\\l/g;
+                if ($contentQuoted eq "") {
+                  $contentQuoted = "\\<empty\\>"
+                }
+                print "  $fqFileNameDotId [label=\"{{working_tree_node:file|$fqFileNameQuoted}|$contentQuoted}\"]\n";
+            }
+    
+            elsif (-d "$fqFileName") {
+                print_dot_for_dir("$fqFileName", "$fqFileNameDotId", "$fqFileNameQuoted", $level + 1)
+            }
+        }
+    
+        my $fqParentDirNameQuotedDisplay =
+          $fqParentDirNameQuoted eq "" ? "\\<root\\>" : $fqParentDirNameQuoted;
+        if ($parentDirContentQuoted eq "") {
+          $parentDirContentQuoted = "\\<empty\\>"
+        }
+        print "  $fqParentDirNameDotId [label=\"{{working_tree_node:dir|$fqParentDirNameQuotedDisplay}|$parentDirContentQuoted}\"]\n";
+    }
+    
+    my @ignoredFqNames = split(
+        /\r?\n/,
+        `git ls-files --others -i --exclude-standard --exclude "/git-draw*"`);
+    foreach (@ignoredFqNames) {
+        $isFqNameIgnored{"$ARGV[0]/$_"} = 1;
+    }
+    foreach (".", "..", ".git") {
+        $isRelNameIgnored{$_} = 1;
+    }
+    print_dot_for_dir($ARGV[0], "workingtree_root", "", 0);
+    ' "$GIT_WORK_TREE"
+}
+
 print_dot() { 
   echo "digraph structs {"
   echo "  node [shape=record,fontsize=11];"
@@ -546,6 +625,9 @@ print_dot() {
   fi
   if [ $showindex = 1 ]; then
     print_dot_index
+  fi
+  if [ $showworkingtree = 1 ]; then
+    print_dot_workingtree
   fi
   echo "}"
 }
@@ -635,6 +717,10 @@ do
 
     --hide-index)
       showindex=0
+      ;;
+
+    --hide-workingtree)
+      workingtree=0
       ;;
 
     --color-scheme)
