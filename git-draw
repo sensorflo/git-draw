@@ -375,9 +375,13 @@ print_dot_objects() {
         `git rev-parse --short='$sha1length' $1` if /([a-f0-9]{40})/'
   done
 
-  git fsck --cache --unreachable --dangling 2>/dev/null |
+  # --no-reflogs is used and --cache is _not_ used because at the beginning,
+  # it is easier to teach novices the concept of unreachable objects when the
+  # index and the reflogs are ignored.  In the tiny repositories git-draw aims
+  # at, the reflog
+  git fsck --no-reflogs --unreachable --dangling 2>/dev/null |
    perl -ne 'print "  _" . substr(`git rev-parse --short='$sha1length' $1`,0,-1) .
-     " [style=dotted]\n" if /^(?:dangling|unreachable)\b.*?([a-f0-9]{40})/'
+     " [style=\"dotted,rounded\", fontcolor=gray, color=gray]\n" if /^(?:dangling|unreachable)\b.*?([a-f0-9]{40})/'
 }
 
 print_dot_references() {
