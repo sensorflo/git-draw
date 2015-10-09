@@ -122,6 +122,9 @@
 #       LR  left to right
 #       RL  right to left
 #
+#   --title <text>
+#     Adds the given text as title to the drawing
+#
 # AUTHOR
 #   Written by Florian Kaufmann <sensorflo@gmail.com>
 #   Modifications by Nathan Doss <nathan.doss@gmail.com>
@@ -211,6 +214,7 @@ showtreecontent=1
 showtagcontent=1
 showblobcontent=1
 orientation="TB"
+title=
 export GIT_DIR=$(git rev-parse --git-dir)
 export GIT_WORK_TREE=$(git rev-parse --show-toplevel)
 colorscheme="default"
@@ -258,6 +262,7 @@ Usage: git-draw [options]
                                  BT  bottom to top
                                  LR  left to right
                                  RL  right to left
+  --title <text>                 Add <text> as title to the drawing
 
 The primary documentation is at the top of the git-draw script itself.
 EOF
@@ -505,6 +510,12 @@ print_dot() {
   echo "  node [shape=record,fontsize=11];"
   echo "  rankdir=\"$orientation\";"
 
+  if [ "$title" ]; then
+    echo "  labelloc=\"t\""
+    titlequoted=$(perl -e '$ARGV[0]=~s/([^a-zA-Z0-9\n])/\\$1/g; print $ARGV[0]' "$title")
+    echo "  label=\"$titlequoted\""
+  fi
+
   if [ $showlegend = 1 ]; then
     echo "  subgraph cluster_0 {"
     echo "    color=gray80;"
@@ -654,6 +665,11 @@ do
         print_usage_and_exit 1 >&2
       fi
       orientation=$2
+      shift
+      ;;
+
+    --title)
+      title="$2"
       shift
       ;;
 
