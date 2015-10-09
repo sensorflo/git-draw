@@ -199,9 +199,23 @@ color_scheme_set19_blob="/set19/2"
 color_scheme_set19_tag="/set19/6"
 color_scheme_set19_default="white"
 
+export GIT_DIR=$(git rev-parse --git-dir)
+export GIT_WORK_TREE=$(git rev-parse --show-toplevel)
+
+make_imgfilename() {
+  perl -e '
+    opendir(DIR,$ARGV[0]);
+    foreach(readdir(DIR)) {
+		  if ( m/git-draw(\d+).png/ ) {
+        if ( $1 > $max ) { $max = $1 };
+      }
+    }
+    print "git-draw" . ($max+1) . ".png"' "$GIT_WORK_TREE"
+}
+
 # set defaults
 dotfilename=git-draw.dot
-imgfilename=git-draw.png
+imgfilename=$(make_imgfilename)
 displaycmd=display
 sha1length=4
 showlegend=1
@@ -215,8 +229,6 @@ showtagcontent=1
 showblobcontent=1
 orientation="TB"
 title=
-export GIT_DIR=$(git rev-parse --git-dir)
-export GIT_WORK_TREE=$(git rev-parse --show-toplevel)
 colorscheme="default"
 
 # set colors (hack ... got to be a better way)
