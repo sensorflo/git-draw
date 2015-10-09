@@ -525,9 +525,11 @@ print_dot_index() {
       $content = $content . $_;
     }
     END {
-      $trailing = (substr($content,-2) eq "\\l") ? "" : "\\l"; 
+      if ($content eq "") {
+        $content = "\\<empty\\>";
+      }
       print "  index [style=filled, fillcolor=lightcyan, " .
-        "label=\"{{index}|$content$trailing}\"]\n";
+        "label=\"{{index}|$content}\"]\n";
     }'
 }
 
