@@ -456,13 +456,22 @@ print_dot_references() {
             "label=\"{{ref$reftype|$mequoted}|" .
             "$otherquoted (referee does not exist)\\l$configmetadata}\"]\n";
         } else {
-          if ($me =~ m/^[A-Z0-9_]*HEAD$/) {
+          if ($me eq "ORIG_HEAD") {
+            # colors as reflog
+             $fillcolor="white";
+            $fontcolorelement = "color=gray90, fontcolor=gray, ";
+          } elsif ($me =~ m/^[A-Z0-9_]*HEAD$/) {
              $fillcolor="gray30";
              $fontcolorelement = "fontcolor=white, ";
           }
           print "  $dotid_me [style=filled, fillcolor=$fillcolor, $fontcolorelement " .
             "label=\"{{ref$reftype|$mequoted}|$otherquoted\\l$configmetadata}\"]\n";
-          print "  $dotid_me -> $dotid_other\n";
+
+          print "  $dotid_me -> $dotid_other";
+          if ($me eq "ORIG_HEAD") {
+            print " [color=gray90]";
+          }
+          print "\n";
         }
       }' 
 }
