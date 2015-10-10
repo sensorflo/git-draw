@@ -329,6 +329,7 @@ ls_all_objects() {
 }
 
 ls_all_refs() {
+  # todo: BUG: FETCH_HEAD might contain multiple entries, specially formated
   git show-ref --abbrev=$sha1length
   for special_ref in .git/*HEAD ; do
     cat "$special_ref" | perl -ne '
@@ -464,6 +465,8 @@ print_dot_references() {
              $fillcolor="gray30";
              $fontcolorelement = "fontcolor=white, ";
           }
+          # todo: regarding FETCH_HEAD, draw edges to merge relevant objs
+          # differently than to those not-for-merge
           print "  $dotid_me [style=filled, fillcolor=$fillcolor, $fontcolorelement " .
             "label=\"{{ref$reftype|$mequoted}|$otherquoted\\l$configmetadata}\"]\n";
 
