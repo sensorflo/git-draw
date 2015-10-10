@@ -289,8 +289,6 @@ EOF
 # TODO
 #   -  Layout graph so commit DAG is top-down and on the left, probably using
 #      graphviz's ranks.
-#   -  Auto-number output files so user can see / compare the different states
-#      of the repository was in.
 #   -  Optionally use temporary files which the user does not directly see
 #   -  Optionally omit drawing the content of all/certain objects/refs so a
 #      bit larger than tiny repositories still draw usefully.
