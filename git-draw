@@ -296,8 +296,6 @@ EOF
 #      in content
 #   -  Amend type cell (top left) and id cell (top right) with the prefix
 #      'type=' and 'id=' to be very clear. Optionally turn off with options.
-#   -  add a graph title / caption which tells the git command(s) since the
-#      last version of the repository content.
 #   -  Provide options to choose the tool to display the image outputted by
 #      dot.
 #   -  Read gitrepository-layou(1) to find out more things which could be
