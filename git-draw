@@ -410,12 +410,13 @@ print_dot_references() {
         $me = $2;
         $other = $1;
         $dotid_me = "_" . (($tmp = $me) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
-        $dotid_other = "_" . (($tmp = $other) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
-        ($otherquoted = $other) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
-        ($mequoted = $me) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
+
+        # determine $reftype, $fillcolor, $configmetadata, $fontcolorelement
         $reftype = "";
         $fillcolor = "gray";
         $configmetadata = "";
+        $fontcolorelement = "";
+        # local branches
         if ($me =~ m@^refs/heads/@) {
           $reftype = ":local branch";
           ($me_short = $me) =~ s@^refs/heads/@@;
@@ -439,28 +440,42 @@ print_dot_references() {
             $configmetadata = "|$tmp"
           }
         }
+        # remote tracking branches
         elsif ($me =~ m@^refs/remotes/@) {
           $reftype = ":remote tracking branch";
           $fillcolor = "yellow";
         }
+        # tags
         elsif ($me =~ m@^refs/tags/@) {
           $reftype = ":tag";
           $fillcolor = "lightyellow";
         }
+        # HEAD and pseudorefs
+        elsif ($me =~ m/^[A-Z0-9_]*HEAD$/) { 
+          if ($me eq "ORIG_HEAD") {
+            # ORIG_HEAD is semantically like a poor mans reflog,
+            # thus same colors
+            $fillcolor="white";
+            $fontcolorelement = "color=gray90, fontcolor=gray, ";
+          }
+          else {
+            $fillcolor="gray30";
+            $fontcolorelement = "fontcolor=white, ";
+          }
+        }
+
+        # different formats/variants of 'me' and 'other'
+        ($mequoted = $me) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
+        $dotid_other = "_" . (($tmp = $other) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
+        ($otherquoted = $other) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
+
+        # actually print dot for current reference node
         if ( ($other !~ m/^[a-f0-9]+$/) &&
              0!=system("git show-ref --verify --quiet -- $other") ) {
           print "  $dotid_me [style=filled, fillcolor=red, " .
             "label=\"{{ref$reftype|$mequoted}|" .
             "$otherquoted (referee does not exist)\\l$configmetadata}\"]\n";
         } else {
-          if ($me eq "ORIG_HEAD") {
-            # colors as reflog
-             $fillcolor="white";
-            $fontcolorelement = "color=gray90, fontcolor=gray, ";
-          } elsif ($me =~ m/^[A-Z0-9_]*HEAD$/) {
-             $fillcolor="gray30";
-             $fontcolorelement = "fontcolor=white, ";
-          }
           # todo: regarding FETCH_HEAD, draw edges to merge relevant objs
           # differently than to those not-for-merge
           print "  $dotid_me [style=filled, fillcolor=$fillcolor, $fontcolorelement " .
