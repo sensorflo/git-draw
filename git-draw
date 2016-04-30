@@ -325,14 +325,16 @@ ls_all_objects() {
 }
 
 # Prints all references, one line per ref. Each line is a space separated
-# list. First element is the referee (a reference name or an abbreviated
-# sha1), second element is the name of the reference.
+# list. First element is the name of the reference, second is the referee (a
+# reference name or an abbreviated sha1).
 #
 # BUG: It is not yet handled that certain special refs, e.g. FETCH_HEAD, might
 # contain multiple referees
 ls_all_refs() {
-  # print all normal refs
-  git show-ref --abbrev=$sha1length
+  # print all normal refs. 'git show-ref' prints referee and ref name in the
+  # wrong order for our purpose, so swap the order
+  git show-ref --abbrev=$sha1length |
+    perl -pe 's/^(\S+)\s*(\S*)$/$2 $1/'
 
   # print HEAD and all special refs
   for special_ref in .git/*HEAD ; do
@@ -344,7 +346,7 @@ ls_all_refs() {
         $is_symbolic_ref ?
         $referee :
         substr(`git rev-parse --short='$sha1length' $referee`, 0, -1);
-      print "$abbrev_referee '$(basename $special_ref)'\n";'
+      print "'$(basename $special_ref)' $abbrev_referee\n";'
   done
 }
 
@@ -417,8 +419,8 @@ print_dot_references() {
   ls_all_refs |
     perl -ne '
       if (m@(\S+)\s+(\S+?)$@) {
-        $currentref = $2;
-        $referee = $1;
+        $currentref = $1;
+        $referee = $2;
         $dotid_currentref = "_" . (($tmp = $currentref) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
 
         # determine $reftype, $fillcolor, $configmetadata, $fontcolorelement
