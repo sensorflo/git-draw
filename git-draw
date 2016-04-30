@@ -324,17 +324,27 @@ ls_all_objects() {
   done
 }
 
+# Prints all references, one line per ref. Each line is a space separated
+# list. First element is the referee (a reference name or an abbreviated
+# sha1), second element is the name of the reference.
+#
+# BUG: It is not yet handled that certain special refs, e.g. FETCH_HEAD, might
+# contain multiple referees
 ls_all_refs() {
-  # todo: BUG: FETCH_HEAD might contain multiple entries, specially formated
+  # print all normal refs
   git show-ref --abbrev=$sha1length
+
+  # print HEAD and all special refs
   for special_ref in .git/*HEAD ; do
     cat "$special_ref" | perl -ne '
-      m/^(?:ref: )?(.*?)$/;
-      if ($1 =~ m/([a-f0-9]{40})/) {
-        $idshort = substr(`git rev-parse --short='$sha1length' $1`,0,-1);
-      }
-      else { $idshort = $1 }
-      print $idshort . " '"$(basename $special_ref)"'\n";'
+      m/^(ref: )?(.*?)$/;
+      my $is_symbolic_ref = (length($1) > 0);
+      my $referee = $2; # ref name or sha1
+      my $abbrev_referee = # ref name or abbreviated sha1
+        $is_symbolic_ref ?
+        $referee :
+        substr(`git rev-parse --short='$sha1length' $referee`, 0, -1);
+      print "$abbrev_referee '$(basename $special_ref)'\n";'
   done
 }
 
