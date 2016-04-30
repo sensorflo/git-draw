@@ -407,9 +407,9 @@ print_dot_references() {
   ls_all_refs |
     perl -ne '
       if (m@(\S+)\s+(\S+?)$@) {
-        $me = $2;
-        $other = $1;
-        $dotid_me = "_" . (($tmp = $me) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
+        $currentref = $2;
+        $referee = $1;
+        $dotid_currentref = "_" . (($tmp = $currentref) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
 
         # determine $reftype, $fillcolor, $configmetadata, $fontcolorelement
         $reftype = "";
@@ -417,11 +417,11 @@ print_dot_references() {
         $configmetadata = "";
         $fontcolorelement = "";
         # local branches
-        if ($me =~ m@^refs/heads/@) {
+        if ($currentref =~ m@^refs/heads/@) {
           $reftype = ":local branch";
-          ($me_short = $me) =~ s@^refs/heads/@@;
-          $remote = substr(`git config --get branch\\.$me_short\\.remote`,0,-1);
-          $merge = substr(`git config --get branch\\.$me_short\\.merge`,0,-1);
+          ($currentref_short = $currentref) =~ s@^refs/heads/@@;
+          $remote = substr(`git config --get branch\\.$currentref_short\\.remote`,0,-1);
+          $merge = substr(`git config --get branch\\.$currentref_short\\.merge`,0,-1);
           if ($remote && $merge) {
             if ($remote eq ".") {
               $dotid_merge = "_" . (($tmp = $merge) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
@@ -432,7 +432,7 @@ print_dot_references() {
               $dotid_remote = (($tmp = $remote) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
               $dotid_merge = "_refs___remotes___${dotid_remote}___${dotid_merge_core}";
             }
-            print "  $dotid_me -> $dotid_merge [style=dotted, color=gray, fontcolor=gray, " .
+            print "  $dotid_currentref -> $dotid_merge [style=dotted, color=gray, fontcolor=gray, " .
               "label=\"upstream branch\"]\n";
             $tmp = "remote = $remote\nmerge = $merge\n";
             $tmp =~ s/([^a-zA-Z0-9\n])/\\$1/g; # quote for dot
@@ -441,21 +441,21 @@ print_dot_references() {
           }
         }
         # remote tracking branches
-        elsif ($me =~ m@^refs/remotes/@) {
+        elsif ($currentref =~ m@^refs/remotes/@) {
           $reftype = ":remote tracking branch";
           $fillcolor = "yellow";
         }
         # tags
-        elsif ($me =~ m@^refs/tags/@) {
+        elsif ($currentref =~ m@^refs/tags/@) {
           $reftype = ":tag";
           $fillcolor = "lightyellow";
         }
         # HEAD and pseudorefs
-        elsif ($me =~ m/^[A-Z0-9_]*HEAD$/) { 
-          unless ($me eq "HEAD") {
+        elsif ($currentref =~ m/^[A-Z0-9_]*HEAD$/) { 
+          unless ($currentref eq "HEAD") {
             $reftype = ":pseudoref";
           }
-          if ($me eq "ORIG_HEAD") {
+          if ($currentref eq "ORIG_HEAD") {
             # ORIG_HEAD is semantically like a poor mans reflog,
             # thus same colors
             $fillcolor="white";
@@ -467,25 +467,25 @@ print_dot_references() {
           }
         }
 
-        # different formats/variants of 'me' and 'other'
-        ($mequoted = $me) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
-        $dotid_other = "_" . (($tmp = $other) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
-        ($otherquoted = $other) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
+        # different formats/variants of 'currentref' and 'referee'
+        ($currentref_quoted = $currentref) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
+        $dotid_referee = "_" . (($tmp = $referee) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
+        ($referee_quoted = $referee) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
 
         # actually print dot for current reference node
-        if ( ($other !~ m/^[a-f0-9]+$/) &&
-             0!=system("git show-ref --verify --quiet -- $other") ) {
-          print "  $dotid_me [style=filled, fillcolor=red, " .
-            "label=\"{{ref$reftype|$mequoted}|" .
-            "$otherquoted (referee does not exist)\\l$configmetadata}\"]\n";
+        if ( ($referee !~ m/^[a-f0-9]+$/) &&
+             0!=system("git show-ref --verify --quiet -- $referee") ) {
+          print "  $dotid_currentref [style=filled, fillcolor=red, " .
+            "label=\"{{ref$reftype|$currentref_quoted}|" .
+            "$referee_quoted (referee does not exist)\\l$configmetadata}\"]\n";
         } else {
           # todo: regarding FETCH_HEAD, draw edges to merge relevant objs
           # differently than to those not-for-merge
-          print "  $dotid_me [style=filled, fillcolor=$fillcolor, $fontcolorelement " .
-            "label=\"{{ref$reftype|$mequoted}|$otherquoted\\l$configmetadata}\"]\n";
+          print "  $dotid_currentref [style=filled, fillcolor=$fillcolor, $fontcolorelement " .
+            "label=\"{{ref$reftype|$currentref_quoted}|$referee_quoted\\l$configmetadata}\"]\n";
 
-          print "  $dotid_me -> $dotid_other";
-          if ($me eq "ORIG_HEAD") {
+          print "  $dotid_currentref -> $dotid_referee";
+          if ($currentref eq "ORIG_HEAD") {
             print " [color=gray90]";
           }
           print "\n";
