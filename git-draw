@@ -452,6 +452,9 @@ print_dot_references() {
         }
         # HEAD and pseudorefs
         elsif ($me =~ m/^[A-Z0-9_]*HEAD$/) { 
+          unless ($me eq "HEAD") {
+            $reftype = ":pseudoref";
+          }
           if ($me eq "ORIG_HEAD") {
             # ORIG_HEAD is semantically like a poor mans reflog,
             # thus same colors
