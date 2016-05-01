@@ -336,7 +336,10 @@ ls_all_refs() {
   # print HEAD and all special refs
   for special_ref in .git/*HEAD ; do
     cat "$special_ref" | perl -ne '
-      m/^(ref: )?(.*?)$/;
+      # cut out first "word", hoping it is a valid reference. The regexp
+      # is way to dump to understand all the possible formats of all the
+      # different special references.
+      m/^(ref: )?(\S+)/;
       my $is_symbolic_ref = (length($1) > 0);
       my $referee = $2; # ref name or sha1
       my $abbrev_referee = # ref name or abbreviated sha1
