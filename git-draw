@@ -549,6 +549,9 @@ print_dot_ref_logs() {
           $content = $content . $id_short . $_;
           
           END {
+            if ($content eq "") {
+              $content = "\\<empty\\>";
+            }
             $trailing = (substr($content,-2) eq "\\l") ? "" : "\\l"; 
             print "  $dotid_reflog [color=gray90, fontcolor=gray, " .
               "label=\"{{reflog|logs/$refname}|$content$trailing}\"]\n";
