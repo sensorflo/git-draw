@@ -324,34 +324,21 @@ ls_all_objects() {
   done
 }
 
-# Prints all references, one line per ref. Each line is a space separated
-# list. First element is the name of the reference, second is the referee (a
-# reference name or an abbreviated sha1).
+# Prints all references, one null-character delimited 'line' per ref. Each
+# 'line' starts with the name of the ref, followed by space, followed by the
+# conent of the ref, which can consist of any characters, most notably
+# newlines.
 ls_all_refs() {
   # print all normal refs. 'git show-ref' prints referee and ref name in the
   # wrong order for our purpose, so swap the order
-  git show-ref --abbrev=$sha1length |
-    perl -pe 's/^(\S+)\s*(\S*)$/$2 $1/'
+  git show-ref |
+    perl -pe 'chomp; s/^(\S+)\s*(\S*)$/$2 $1\0/'
 
   # print HEAD and all special refs
   for special_ref in .git/*HEAD ; do
-    cat "$special_ref" | perl -ne '
-      # cut out first "word", hoping it is a valid reference. The regexp
-      # is way to dump to understand all the possible formats of all the
-      # different special references.
-      m/^(ref: )?(\S+)/;
-      my $is_symbolic_ref = (length($1) > 0);
-      my $referee = $2; # ref name or sha1
-      my $abbrev_referee = # ref name or abbreviated sha1
-        $is_symbolic_ref ?
-        $referee :
-        substr(`git rev-parse --short='$sha1length' $referee`, 0, -1);
-      push @abbrev_referees, $abbrev_referee;
-      END {
-        $, = " ";
-        $\ = "\n";
-        print "'$(basename $special_ref)'", @abbrev_referees;
-      }'
+    printf "%s" "$(basename $special_ref) "
+    cat "$special_ref"
+    printf "\0"
   done
 }
 
@@ -423,11 +410,13 @@ print_dot_objects() {
 print_dot_references() {
   ls_all_refs |
     perl -ne '
+      BEGIN { $/ = "\0"; }
       chomp;
-      if (m@(\S+)\s+(.*)$@) {
+      if (m@^(\S+) (.*)@s) { # $_ contains newlines
         $currentref = $1;
-        $referees = $2;
-
+        { local $/ = "\n";
+          chomp($referee_lines = $2);
+        }
         ($currentref_quoted = $currentref) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
         $dotid_currentref = "_" . (($tmp = $currentref) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
 
@@ -490,8 +479,20 @@ print_dot_references() {
         # print dot for outgoing edges (to the referees) of current reference
         my $all_referees_exist = 1;
         my @adorned_quoted_referees = ();
-        for my $referee (split(" ", $referees)) {
-          ($referee_quoted = $referee) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
+        for my $referee_line (split("\n", $referee_lines)) {
+          # Extract referee from referee line.
+          my $referee = "";
+          $referee_line =~ m/^(ref: )?(\S+)/;
+          my $is_symbolic_ref = (length($1) > 0);
+          if ($is_symbolic_ref) {
+            $referee = $2;
+          } else {
+            $referee_line =~ m/([0-9a-f]{40})/;
+            $referee = substr(`git rev-parse --short='$sha1length' $1`, 0, -1);
+          }
+
+          # Actually print dot
+          my $adornment = "";
           my $referee_exists =
              ($referee =~ m/^[a-f0-9]+$/) || # assume object with a sha1 exists
              (0 == system("git show-ref --verify --quiet -- $referee"));
@@ -500,11 +501,15 @@ print_dot_references() {
               (($tmp = $referee) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
             my $attribs = ($currentref eq "ORIG_HEAD") ? "[color=gray90]" : "";
             print "  $dotid_currentref -> $dotid_referee $attribs\n";
-            push @adorned_quoted_referees, $referee_quoted;
           } else {
             $all_referees_exist = 0;
-            push @adorned_quoted_referees, "$referee_quoted \\<does not exist\\>";
+            $adornment = " \\<does not exist\\>";
           }
+
+          ($referee_line_quoted = $referee_line) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
+          $referee_line_quoted =~
+            s/([0-9a-f]{40})/substr(`git rev-parse --short='$sha1length' $1`,0,-1)/eg;
+          push(@adorned_quoted_referees, "$referee_line_quoted$adornment");
         }
         my $adorned_quoted_referees = join("\\l", @adorned_quoted_referees);
 
