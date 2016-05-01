@@ -327,9 +327,6 @@ ls_all_objects() {
 # Prints all references, one line per ref. Each line is a space separated
 # list. First element is the name of the reference, second is the referee (a
 # reference name or an abbreviated sha1).
-#
-# BUG: It is not yet handled that certain special refs, e.g. FETCH_HEAD, might
-# contain multiple referees
 ls_all_refs() {
   # print all normal refs. 'git show-ref' prints referee and ref name in the
   # wrong order for our purpose, so swap the order
@@ -346,7 +343,12 @@ ls_all_refs() {
         $is_symbolic_ref ?
         $referee :
         substr(`git rev-parse --short='$sha1length' $referee`, 0, -1);
-      print "'$(basename $special_ref)' $abbrev_referee\n";'
+      push @abbrev_referees, $abbrev_referee;
+      END {
+        $, = " ";
+        $\ = "\n";
+        print "'$(basename $special_ref)'", @abbrev_referees;
+      }'
   done
 }
 
@@ -418,9 +420,12 @@ print_dot_objects() {
 print_dot_references() {
   ls_all_refs |
     perl -ne '
-      if (m@(\S+)\s+(\S+?)$@) {
+      chomp;
+      if (m@(\S+)\s+(.*)$@) {
         $currentref = $1;
-        $referee = $2;
+        $referees = $2;
+
+        ($currentref_quoted = $currentref) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
         $dotid_currentref = "_" . (($tmp = $currentref) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
 
         # determine $reftype, $fillcolor, $configmetadata, $fontcolorelement
@@ -479,30 +484,37 @@ print_dot_references() {
           }
         }
 
-        # different formats/variants of 'currentref' and 'referee'
-        ($currentref_quoted = $currentref) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
-        $dotid_referee = "_" . (($tmp = $referee) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
-        ($referee_quoted = $referee) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
-
-        # actually print dot for current reference node
-        if ( ($referee !~ m/^[a-f0-9]+$/) &&
-             0!=system("git show-ref --verify --quiet -- $referee") ) {
-          print "  $dotid_currentref [style=filled, fillcolor=red, " .
-            "label=\"{{ref$reftype|$currentref_quoted}|" .
-            "$referee_quoted (referee does not exist)\\l$configmetadata}\"]\n";
-        } else {
-          # todo: regarding FETCH_HEAD, draw edges to merge relevant objs
-          # differently than to those not-for-merge
-          print "  $dotid_currentref [style=filled, fillcolor=$fillcolor, $fontcolorelement " .
-            "label=\"{{ref$reftype|$currentref_quoted}|$referee_quoted\\l$configmetadata}\"]\n";
-
-          print "  $dotid_currentref -> $dotid_referee";
-          if ($currentref eq "ORIG_HEAD") {
-            print " [color=gray90]";
+        # print dot for outgoing edges (to the referees) of current reference
+        my $all_referees_exist = 1;
+        my @adorned_quoted_referees = ();
+        for my $referee (split(" ", $referees)) {
+          ($referee_quoted = $referee) =~ s/([^a-zA-Z0-9\n])/\\$1/g;
+          my $referee_exists =
+             ($referee =~ m/^[a-f0-9]+$/) || # assume object with a sha1 exists
+             (0 == system("git show-ref --verify --quiet -- $referee"));
+          if ($referee_exists) {
+            my $dotid_referee = "_" .
+              (($tmp = $referee) =~ s@([^a-zA-Z0-9_])@___@g,$tmp);
+            my $attribs = ($currentref eq "ORIG_HEAD") ? "[color=gray90]" : "";
+            print "  $dotid_currentref -> $dotid_referee $attribs\n";
+            push @adorned_quoted_referees, $referee_quoted;
+          } else {
+            $all_referees_exist = 0;
+            push @adorned_quoted_referees, "$referee_quoted \\<does not exist\\>";
           }
-          print "\n";
         }
-      }' 
+        my $adorned_quoted_referees = join("\\l", @adorned_quoted_referees);
+
+        # print dot for node representing current reference
+        if (!$all_referees_exist) {
+          $fillcolor = "red";
+          $fontcolorelement = "";
+        }
+        print "  $dotid_currentref [" .
+          "style=filled, fillcolor=$fillcolor, $fontcolorelement " .
+          "label=\"{{ref$reftype|$currentref_quoted}|" .
+          "$adorned_quoted_referees\\l$configmetadata}\"]\n";
+      }'
 }
 
 print_dot_ref_logs() {
